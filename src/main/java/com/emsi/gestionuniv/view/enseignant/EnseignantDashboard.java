@@ -4,9 +4,8 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.RoundRectangle2D;
+
 import com.emsi.gestionuniv.model.user.Teacher;
-import com.emsi.gestionuniv.view.Login.login;
 
 /**
  * Tableau de bord pour les enseignants de l'application de gestion universitaire.
@@ -277,13 +276,13 @@ public class EnseignantDashboard extends JFrame {
 
         // Options du menu avec icônes Unicode
         String[] menuOptions = {
-                "📊 Tableau de bord",
-                "📚 Mes cours",
-                "📝 Gestion des notes",
-                "📅 Planning",
-                "💬 Communications",
-                "👤 Mon profil",
-                "⚙️ Paramètres"
+                "Tableau de bord",
+                "Mes cours",
+                "Gestion des notes",
+                "Planning",
+                "Communications",
+                "Mon profil",
+                "Paramètres"
         };
 
         // Création des boutons du menu
@@ -296,10 +295,10 @@ public class EnseignantDashboard extends JFrame {
         sidebarPanel.add(Box.createVerticalGlue()); // Pousse le bouton déconnexion vers le bas
 
         // Bouton déconnexion en bas de la barre latérale
-        JButton logoutButton = createMenuButton("🚪 Déconnexion");
+        JButton logoutButton = createMenuButton(" Déconnexion");
         logoutButton.addActionListener(e -> {
             dispose(); // Ferme la fenêtre actuelle
-            SwingUtilities.invokeLater(() -> new login().setVisible(true)); // Ouvre la fenêtre de connexion
+            // SwingUtilities.invokeLater(() -> new login().setVisible(true)); // Ouvre la fenêtre de connexion
         });
 
         sidebarPanel.add(logoutButton);
@@ -316,7 +315,7 @@ public class EnseignantDashboard extends JFrame {
         // Bouton avec rendu personnalisé
         JButton button = new JButton(text) {
             // Le bouton "Tableau de bord" est sélectionné par défaut
-            private boolean selected = text.equals("📊 Tableau de bord");
+            private boolean selected = text.equals("Tableau de bord");
             private boolean hovering = false;
 
             {
@@ -394,7 +393,7 @@ public class EnseignantDashboard extends JFrame {
         contentTitle.setForeground(EMSI_GRAY);
 
         // Zone de recherche avec style moderne
-        JTextField searchField = new JTextField(20) {
+        final JTextField searchField = new JTextField(20) {
             {
                 setOpaque(false);
                 setBorder(new CompoundBorder(
@@ -418,6 +417,24 @@ public class EnseignantDashboard extends JFrame {
         };
         searchField.setText("Rechercher...");
         searchField.setForeground(Color.GRAY);
+
+        searchField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (searchField.getText().equals("Rechercher...")) {
+                    searchField.setText("");
+                    searchField.setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (searchField.getText().isEmpty()) {
+                    searchField.setText("Rechercher...");
+                    searchField.setForeground(Color.GRAY);
+                }
+            }
+        });
 
         // Panel pour le titre et la recherche
         JPanel titlePanel = new JPanel(new BorderLayout());
@@ -727,7 +744,7 @@ public class EnseignantDashboard extends JFrame {
         // Gestion spéciale pour la déconnexion
         if (option.equals("🚪 Déconnexion")) {
             dispose(); // Ferme la fenêtre actuelle
-            SwingUtilities.invokeLater(() -> new login().setVisible(true)); // Ouvre l'écran de connexion
+            // SwingUtilities.invokeLater(() -> new login().setVisible(true)); // Ouvre l'écran de connexion
         } else {
             // Pour les autres options, affiche un message temporaire
             JOptionPane.showMessageDialog(this,

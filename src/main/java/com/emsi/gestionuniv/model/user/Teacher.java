@@ -32,6 +32,10 @@ public class Teacher extends User {
         this.specialite = specialite;
     }
 
+   public Teacher(){
+        super(0, "", "", "", "", "TEACHER");
+   }
+
     // Getters and Setters
     /**
      * Récupère le département de l'enseignant
@@ -85,4 +89,6 @@ public class Teacher extends User {
     public String getFullName() {
         return getPrenom() + " " + getNom();
     }
+
+
 }

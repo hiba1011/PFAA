@@ -13,9 +13,9 @@
 
     <!-- Base de données -->
     <dependency>
-        <groupId>mysql</groupId>
-        <artifactId>mysql-connector-java</artifactId>
-        <version>8.0.28</version>
+        <groupId>com.mysql</groupId>
+        <artifactId>mysql-connector-j</artifactId>
+        <version>9.3.0</version>
     </dependency>
 
     <!-- Hibernate (ORM) -->
@@ -50,5 +50,17 @@
         <artifactId>junit-jupiter-api</artifactId>
         <version>5.8.2</version>
         <scope>test</scope>
+    </dependency>
+
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <version>8.0.33</version> <!-- or latest version -->
+    </dependency>
+
+    <dependency>
+        <groupId>com.formdev</groupId>
+        <artifactId>flatlaf</artifactId>
+        <version>3.6</version>
     </dependency>
 </dependencies>
