@@ -268,13 +268,6 @@ public class EtudiantDashboard {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             Student etudiant = new Student();
-            etudiant.setMatricule("1234");
-            etudiant.setPrenom("Hiba");
-            etudiant.setNom("Kaaouach");
-            etudiant.setEmail("hiba@example.com");
-            etudiant.setFiliere("GI");
-            etudiant.setPromotion("2025");
-            etudiant.setPhoto("");
             new EtudiantDashboard(etudiant).setVisible(true);
         });
     }

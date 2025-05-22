@@ -1,16 +1,4 @@
 <dependencies>
-    <!-- JavaFX (pour l'interface graphique) -->
-    <dependency>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-controls</artifactId>
-        <version>17.0.2</version>
-    </dependency>
-    <dependency>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-fxml</artifactId>
-        <version>17.0.2</version>
-    </dependency>
-
     <!-- Base de données -->
     <dependency>
         <groupId>com.mysql</groupId>
@@ -58,9 +46,4 @@
         <version>8.0.33</version> <!-- or latest version -->
     </dependency>
 
-    <dependency>
-        <groupId>com.formdev</groupId>
-        <artifactId>flatlaf</artifactId>
-        <version>3.6</version>
-    </dependency>
 </dependencies>

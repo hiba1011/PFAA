@@ -10,24 +10,34 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * Service gérant les opérations liées aux étudiants
+ * Service gérant les opérations liées aux étudiants :
+ * - Authentification
+ * - Recherche par matricule, email, ID
+ * - Mise à jour de la photo de profil
  */
 public class EtudiantService {
+
+    // Référence à un repository en mémoire (peut être utilisé pour tests ou extensions)
     private StudentRepository studentRepository;
+
+    // Nom du schéma et de la table utilisée dans la base de données
     private static final String DATABASE_SCHEMA = "gestion_universitaire";
     private static final String STUDENT_TABLE = "etudiants";
 
+    /**
+     * Constructeur du service étudiant
+     */
     public EtudiantService() {
-        this.studentRepository = new StudentRepository();
+        this.studentRepository = new StudentRepository(); // Utilisé si on veut stocker localement
     }
 
     /**
-     * Retourne l'objet Student correspondant au matricule et mot de passe,
-     * ou null si aucun étudiant n'est trouvé.
+     * Méthode statique permettant de rechercher un étudiant par matricule et mot de passe.
+     * Sert principalement à l'authentification.
      *
-     * @param matricule Le matricule de l'étudiant
-     * @param password Le mot de passe de l'étudiant
-     * @return L'objet Student si trouvé, null sinon
+     * @param matricule Matricule fourni par l'utilisateur
+     * @param password Mot de passe fourni par l'utilisateur
+     * @return Un objet Student si les identifiants sont valides, sinon null
      */
     public static Student findStudentByMatricule(String matricule, String password) {
         Student student = null;
@@ -38,19 +48,19 @@ public class EtudiantService {
         System.out.println("DEBUG - Tentative d'authentification pour matricule: " + matricule);
 
         try {
+            // Connexion à la base de données
             conn = DBConnect.getConnection();
 
             if (conn == null) {
-                System.err.println("ERREUR CRITIQUE - La connexion à la base de données est null!");
+                System.err.println("ERREUR CRITIQUE - Connexion à la base de données échouée.");
                 return null;
             }
 
-            System.out.println("DEBUG - Connexion à la base de données établie");
+            System.out.println("DEBUG - Connexion établie");
 
+            // Préparation de la requête SQL paramétrée
             String sql = String.format("SELECT * FROM %s.%s WHERE matricule = ? AND mot_de_passe = ?",
                     DATABASE_SCHEMA, STUDENT_TABLE);
-            System.out.println("DEBUG - Requête SQL: " + sql.replace("?", "***"));
-
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, matricule);
             pstmt.setString(2, password);
@@ -58,24 +68,22 @@ public class EtudiantService {
             System.out.println("DEBUG - Exécution de la requête...");
             rs = pstmt.executeQuery();
 
-            boolean found = rs.next();
-            System.out.println("DEBUG - Résultat trouvé: " + (found ? "OUI" : "NON"));
-
-            if (found) {
-                System.out.println("DEBUG - Construction de l'objet Student...");
+            if (rs.next()) {
+                // Création d'un objet Student à partir du résultat
                 student = createStudentFromResultSet(rs);
                 System.out.println("DEBUG - Étudiant trouvé: " + student.getNom() + " " + student.getPrenom());
             } else {
-                System.out.println("DEBUG - Aucun étudiant trouvé avec ces identifiants");
+                System.out.println("DEBUG - Aucun étudiant trouvé avec ces identifiants.");
             }
 
         } catch (SQLException e) {
-            System.err.println("ERREUR SQL lors de la recherche de l'étudiant: " + e.getMessage());
+            System.err.println("ERREUR SQL: " + e.getMessage());
             e.printStackTrace();
         } catch (Exception e) {
-            System.err.println("ERREUR GÉNÉRALE lors de la recherche de l'étudiant: " + e.getMessage());
+            System.err.println("ERREUR GÉNÉRALE: " + e.getMessage());
             e.printStackTrace();
         } finally {
+            // Libération des ressources
             closeResources(rs, pstmt, conn);
         }
 
@@ -83,22 +91,21 @@ public class EtudiantService {
     }
 
     /**
-     * Authentifie un étudiant en vérifiant si le matricule et le mot de passe correspondent
-     * à un enregistrement dans la base de données.
+     * Authentifie un étudiant à l'aide de son matricule et mot de passe
      *
-     * @param matricule Le matricule fourni par l'utilisateur
-     * @param password Le mot de passe fourni par l'utilisateur
-     * @return true si l'authentification réussit, false sinon
+     * @param matricule Matricule fourni
+     * @param password Mot de passe fourni
+     * @return true si les identifiants sont valides, false sinon
      */
     public boolean authenticate(String matricule, String password) {
         return findStudentByMatricule(matricule, password) != null;
     }
 
     /**
-     * Récupère un étudiant par son ID
+     * Recherche un étudiant par son identifiant unique (ID)
      *
-     * @param id L'identifiant de l'étudiant
-     * @return l'objet Student correspondant ou null si non trouvé
+     * @param id Identifiant de l'étudiant
+     * @return Objet Student trouvé ou null si aucun étudiant ne correspond
      */
     public Student findStudentById(int id) {
         Student student = null;
@@ -109,8 +116,7 @@ public class EtudiantService {
         try {
             conn = DBConnect.getConnection();
 
-            String sql = String.format("SELECT * FROM %s.%s WHERE id = ?",
-                    DATABASE_SCHEMA, STUDENT_TABLE);
+            String sql = String.format("SELECT * FROM %s.%s WHERE id = ?", DATABASE_SCHEMA, STUDENT_TABLE);
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, id);
 
@@ -131,10 +137,10 @@ public class EtudiantService {
     }
 
     /**
-     * Recherche un étudiant par son email
+     * Recherche un étudiant en fonction de son adresse email
      *
-     * @param email L'email de l'étudiant
-     * @return l'objet Student correspondant ou null si non trouvé
+     * @param email Adresse email à rechercher
+     * @return Objet Student si trouvé, null sinon
      */
     public Student findStudentByEmail(String email) {
         Student student = null;
@@ -145,8 +151,7 @@ public class EtudiantService {
         try {
             conn = DBConnect.getConnection();
 
-            String sql = String.format("SELECT * FROM %s.%s WHERE email = ?",
-                    DATABASE_SCHEMA, STUDENT_TABLE);
+            String sql = String.format("SELECT * FROM %s.%s WHERE email = ?", DATABASE_SCHEMA, STUDENT_TABLE);
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, email);
 
@@ -157,7 +162,7 @@ public class EtudiantService {
             }
 
         } catch (SQLException e) {
-            System.err.println("Erreur lors de la recherche de l'étudiant par email: " + e.getMessage());
+            System.err.println("Erreur lors de la recherche par email: " + e.getMessage());
             e.printStackTrace();
         } finally {
             closeResources(rs, pstmt, conn);
@@ -167,10 +172,10 @@ public class EtudiantService {
     }
 
     /**
-     * Met à jour la photo de profil d'un étudiant
+     * Met à jour le chemin de la photo de profil d’un étudiant donné
      *
-     * @param id L'identifiant de l'étudiant
-     * @param photoPath Le chemin de la nouvelle photo
+     * @param id Identifiant de l’étudiant
+     * @param photoPath Nouveau chemin de la photo
      * @return true si la mise à jour a réussi, false sinon
      */
     public boolean updateStudentPhoto(int id, String photoPath) {
@@ -181,8 +186,7 @@ public class EtudiantService {
         try {
             conn = DBConnect.getConnection();
 
-            String sql = String.format("UPDATE %s.%s SET photo = ? WHERE id = ?",
-                    DATABASE_SCHEMA, STUDENT_TABLE);
+            String sql = String.format("UPDATE %s.%s SET photo = ? WHERE id = ?", DATABASE_SCHEMA, STUDENT_TABLE);
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, photoPath);
             pstmt.setInt(2, id);
@@ -200,7 +204,11 @@ public class EtudiantService {
     }
 
     /**
-     * Crée un objet Student à partir d'un ResultSet
+     * Crée un objet Student à partir d’un ResultSet
+     *
+     * @param rs Le ResultSet contenant les données de l'étudiant
+     * @return Un objet Student entièrement initialisé
+     * @throws SQLException en cas d'erreur d'accès à une colonne
      */
     private static Student createStudentFromResultSet(ResultSet rs) throws SQLException {
         try {
@@ -216,15 +224,17 @@ public class EtudiantService {
             student.setPhoto(rs.getString("photo"));
             return student;
         } catch (SQLException e) {
-            System.err.println("ERREUR lors de la création de l'étudiant depuis ResultSet:");
-            System.err.println("Colonne manquante ou erreur de conversion: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("ERREUR lors de la construction de Student à partir du ResultSet: " + e.getMessage());
             throw e;
         }
     }
 
     /**
-     * Méthode utilitaire pour fermer les ressources de base de données
+     * Ferme les ressources JDBC pour éviter les fuites mémoire
+     *
+     * @param rs Le ResultSet à fermer
+     * @param pstmt Le PreparedStatement à fermer
+     * @param conn La connexion à fermer
      */
     private static void closeResources(ResultSet rs, PreparedStatement pstmt, Connection conn) {
         try {
