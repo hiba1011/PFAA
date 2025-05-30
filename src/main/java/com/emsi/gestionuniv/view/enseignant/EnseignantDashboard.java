@@ -278,11 +278,12 @@ public class EnseignantDashboard extends JFrame {
         String[] menuOptions = {
                 "Tableau de bord",
                 "Mes cours",
+                "Mes listes",
                 "Gestion des notes",
                 "Planning",
                 "Communications",
                 "Mon profil",
-                "Paramètres"
+
         };
 
         // Création des boutons du menu

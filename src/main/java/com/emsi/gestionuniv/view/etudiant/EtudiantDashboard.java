@@ -183,10 +183,11 @@ public class EtudiantDashboard {
         contentPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Tableau de bord", new JLabel("Bienvenue sur votre tableau de bord !"));
-        tabbedPane.addTab("Informations", new JLabel("Informations détaillées de l'étudiant"));
-        tabbedPane.addTab("Notes", new JLabel("Tableau des notes"));
+        tabbedPane.addTab("Profil", new JLabel("Informations détaillées de l'étudiant"));
+        tabbedPane.addTab("Releves des Notes", new JLabel("Tableau des notes"));
         tabbedPane.addTab("Emploi du temps", new JLabel("Emploi du temps"));
+        tabbedPane.addTab("Abscence", new JLabel("Abscences"));
+        tabbedPane.addTab("Messages", new JLabel("Notes Pedagogiques"));
 
         contentPanel.add(tabbedPane, BorderLayout.CENTER);
         mainPanel.add(contentPanel, BorderLayout.CENTER);
