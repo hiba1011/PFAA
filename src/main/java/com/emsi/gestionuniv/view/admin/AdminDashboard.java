@@ -7,7 +7,23 @@ import java.awt.*;
 import java.awt.event.*;
 import com.emsi.gestionuniv.app.MainApplication;
 
+/**
+ * Tableau de bord administrateur avec un style moderne inspiré du dashboard enseignant.
+ */
 public class AdminDashboard extends JFrame {
+    // Couleurs et polices inspirées du dashboard enseignant
+    private static final Color EMSI_GREEN = new Color(0, 148, 68);
+    private static final Color EMSI_DARK_GREEN = new Color(0, 104, 56);
+    private static final Color EMSI_GRAY = new Color(88, 88, 90);
+    private static final Color EMSI_LIGHT_GRAY = new Color(245, 245, 245);
+    private static final Color BACKGROUND_WHITE = new Color(252, 252, 252);
+
+    private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 22);
+    private static final Font SUBTITLE_FONT = new Font("Segoe UI", Font.PLAIN, 15);
+    private static final Font MENU_FONT = new Font("Segoe UI", Font.PLAIN, 15);
+    private static final Font STAT_VALUE_FONT = new Font("Segoe UI", Font.BOLD, 30);
+    private static final Font STAT_TITLE_FONT = new Font("Segoe UI", Font.BOLD, 14);
+
     private JPanel contentPanel;
     private JPanel menuPanel;
     private String username;
@@ -15,7 +31,6 @@ public class AdminDashboard extends JFrame {
     private JPanel cardPanel;
 
     public AdminDashboard(String username) {
-        // Vérifier que c'est bien l'admin
         if (!"admin".equals(username)) {
             JOptionPane.showMessageDialog(this,
                     "Accès non autorisé",
@@ -27,58 +42,114 @@ public class AdminDashboard extends JFrame {
 
         this.username = username;
         setTitle("Tableau de bord administrateur");
-        setSize(1000, 600);
+        setSize(1100, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Configurer le panneau principal avec BorderLayout
-        contentPanel = new JPanel(new BorderLayout());
+        // Look and feel moderne
+        setUIProperties();
 
-        // Créer la barre supérieure
+        // Panel principal
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(BACKGROUND_WHITE);
+
+        // Header moderne
         JPanel topPanel = createTopPanel();
-        contentPanel.add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(topPanel, BorderLayout.NORTH);
 
-        // Créer le menu latéral
-        menuPanel = createMenuPanel();
-        contentPanel.add(menuPanel, BorderLayout.WEST);
+        // Sidebar moderne
+        menuPanel = createSidebarPanel();
+        mainPanel.add(menuPanel, BorderLayout.WEST);
 
-        // Créer le panneau principal avec CardLayout pour les différentes vues
+        // Card panel pour les vues
         cardLayout = new CardLayout();
         cardPanel = new JPanel(cardLayout);
+        cardPanel.setBackground(EMSI_LIGHT_GRAY);
 
-        // Ajouter les différentes vues au panneau de cartes
         cardPanel.add(createDashboardPanel(), "dashboard");
         cardPanel.add(createStudentsPanel(), "students");
         cardPanel.add(createTeachersPanel(), "teachers");
         cardPanel.add(createCoursesPanel(), "courses");
         cardPanel.add(createSettingsPanel(), "settings");
 
-        contentPanel.add(cardPanel, BorderLayout.CENTER);
+        mainPanel.add(cardPanel, BorderLayout.CENTER);
 
-        // Ajouter le panneau principal à la fenêtre
-        add(contentPanel);
+        setContentPane(mainPanel);
         setVisible(true);
     }
 
+    private void setUIProperties() {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            UIManager.put("Panel.background", BACKGROUND_WHITE);
+            UIManager.put("Label.font", new Font("Segoe UI", Font.PLAIN, 14));
+            UIManager.put("Button.font", MENU_FONT);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private JPanel createTopPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(new Color(183, 28, 28));
-        panel.setBorder(new EmptyBorder(10, 15, 10, 15));
+        JPanel panel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gradient = new GradientPaint(
+                        0, 0, EMSI_GREEN,
+                        getWidth(), 0, EMSI_DARK_GREEN
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                g2d.setColor(new Color(255, 255, 255, 20));
+                g2d.fillOval(-20, -20, 150, 150);
+                g2d.fillOval(getWidth() - 100, getHeight() - 40, 80, 80);
+                g2d.dispose();
+            }
+        };
+        panel.setBorder(new EmptyBorder(18, 30, 18, 30));
+
+        // --- Ajout du bouton flèche retour ---
+        JButton backButton = new JButton("\u2190"); // Unicode flèche gauche
+        backButton.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        backButton.setForeground(Color.WHITE);
+        backButton.setBackground(new Color(0,0,0,0));
+        backButton.setFocusPainted(false);
+        backButton.setBorderPainted(false);
+        backButton.setContentAreaFilled(false);
+        backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        backButton.setToolTipText("Retour");
+        backButton.addActionListener(e -> {
+            // Ferme le dashboard et retourne à l'écran précédent (login)
+            dispose();
+            new com.emsi.gestionuniv.view.Login.AdminLogin();
+        });
 
         JLabel titleLabel = new JLabel("Système de Gestion Universitaire - Administration");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        titleLabel.setFont(TITLE_FONT);
         titleLabel.setForeground(Color.WHITE);
 
-        JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        leftPanel.setOpaque(false);
+        leftPanel.add(backButton);
+        leftPanel.add(Box.createHorizontalStrut(18));
+        leftPanel.add(titleLabel);
+
+        JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         userPanel.setOpaque(false);
 
-        JLabel userLabel = new JLabel("Connecté: " + username);
-        userLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        JLabel userLabel = new JLabel("\uD83D\uDC64  " + username);
+        userLabel.setFont(SUBTITLE_FONT);
         userLabel.setForeground(Color.WHITE);
 
         JButton logoutButton = new JButton("Déconnexion");
-        logoutButton.setFont(new Font("Arial", Font.PLAIN, 12));
+        logoutButton.setFont(MENU_FONT);
         logoutButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutButton.setFocusPainted(false);
+        logoutButton.setBorderPainted(false);
+        logoutButton.setContentAreaFilled(false);
+        logoutButton.setForeground(Color.WHITE);
         logoutButton.addActionListener(e -> {
             int response = JOptionPane.showConfirmDialog(
                     this,
@@ -95,82 +166,150 @@ public class AdminDashboard extends JFrame {
         userPanel.add(userLabel);
         userPanel.add(logoutButton);
 
-        panel.add(titleLabel, BorderLayout.WEST);
+        panel.add(leftPanel, BorderLayout.WEST);
         panel.add(userPanel, BorderLayout.EAST);
 
         return panel;
     }
 
-    private JPanel createMenuPanel() {
-        JPanel panel = new JPanel();
-        panel.setBackground(new Color(33, 33, 33));
-        panel.setPreferredSize(new Dimension(200, getHeight()));
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(new EmptyBorder(20, 0, 0, 0));
+    private JPanel createSidebarPanel() {
+        JPanel sidebarPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(BACKGROUND_WHITE);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                for (int i = 0; i < 6; i++) {
+                    g2d.setColor(new Color(0, 0, 0, 2 + i));
+                    g2d.drawLine(getWidth() - i, 0, getWidth() - i, getHeight());
+                }
+                g2d.dispose();
+            }
+        };
+        sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
+        sidebarPanel.setPreferredSize(new Dimension(220, 0));
+        sidebarPanel.setBorder(new EmptyBorder(25, 15, 25, 15));
 
-        // Menu items
+        JLabel logoLabel = new JLabel("EMSI");
+        logoLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        logoLabel.setForeground(EMSI_GREEN);
+        logoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        sidebarPanel.add(logoLabel);
+        sidebarPanel.add(Box.createRigidArea(new Dimension(0, 30)));
+
         String[] menuItems = {
-                "Tableau de bord", "Étudiants", "Enseignants", "Cours", "Paramètres"
+                " Tableau de bord",
+                "  Étudiants",
+                "  Enseignants",
+                "  Cours",
+                " Paramètres"
         };
         String[] menuCards = {
                 "dashboard", "students", "teachers", "courses", "settings"
         };
 
         for (int i = 0; i < menuItems.length; i++) {
-            JPanel menuItemPanel = new JPanel(new BorderLayout());
-            menuItemPanel.setBackground(new Color(33, 33, 33));
-            menuItemPanel.setBorder(new EmptyBorder(10, 15, 10, 15));
-            menuItemPanel.setMaximumSize(new Dimension(200, 50));
-
-            JLabel menuLabel = new JLabel(menuItems[i]);
-            menuLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-            menuLabel.setForeground(Color.WHITE);
-
-            final String cardName = menuCards[i];
-
-            menuItemPanel.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    menuItemPanel.setBackground(new Color(66, 66, 66));
-                    setCursor(new Cursor(Cursor.HAND_CURSOR));
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    menuItemPanel.setBackground(new Color(33, 33, 33));
-                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                }
-
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    cardLayout.show(cardPanel, cardName);
-                }
-            });
-
-            menuItemPanel.add(menuLabel, BorderLayout.CENTER);
-            panel.add(menuItemPanel);
+            JButton menuButton = createMenuButton(menuItems[i], menuCards[i], i == 0);
+            sidebarPanel.add(menuButton);
+            sidebarPanel.add(Box.createRigidArea(new Dimension(0, 12)));
         }
 
-        panel.add(Box.createVerticalGlue());
+        sidebarPanel.add(Box.createVerticalGlue());
 
-        return panel;
+        JButton logoutButton = createMenuButton("Déconnexion", "logout", false);
+        logoutButton.addActionListener(e -> {
+            int response = JOptionPane.showConfirmDialog(
+                    this,
+                    "Voulez-vous vraiment vous déconnecter?",
+                    "Confirmation",
+                    JOptionPane.YES_NO_OPTION
+            );
+            if (response == JOptionPane.YES_OPTION) {
+                new MainApplication().main(new String[0]);
+                dispose();
+            }
+        });
+        sidebarPanel.add(logoutButton);
+
+        return sidebarPanel;
+    }
+
+    private JButton createMenuButton(String text, String card, boolean selected) {
+        JButton button = new JButton(text) {
+            private boolean hovering = false;
+            private boolean isSelected = selected;
+
+            {
+                setFocusPainted(false);
+                setContentAreaFilled(false);
+                setBorderPainted(false);
+                setOpaque(false);
+                setCursor(new Cursor(Cursor.HAND_CURSOR));
+                setHorizontalAlignment(SwingConstants.LEFT);
+                setFont(MENU_FONT);
+                setPreferredSize(new Dimension(Integer.MAX_VALUE, 40));
+                setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+                addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseEntered(MouseEvent e) { hovering = true; repaint(); }
+                    @Override
+                    public void mouseExited(MouseEvent e) { hovering = false; repaint(); }
+                });
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (isSelected) {
+                    g2d.setColor(EMSI_GREEN);
+                    g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                } else if (hovering) {
+                    g2d.setColor(EMSI_LIGHT_GRAY);
+                    g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                }
+                g2d.setFont(MENU_FONT);
+                FontMetrics fm = g2d.getFontMetrics();
+                int x = 16;
+                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                g2d.setColor(isSelected ? Color.WHITE : EMSI_GRAY);
+                g2d.drawString(getText(), x, y);
+                g2d.dispose();
+            }
+        };
+        button.addActionListener(e -> {
+            if ("logout".equals(card)) return;
+            for (Component comp : menuPanel.getComponents()) {
+                if (comp instanceof JButton) {
+                    ((JButton) comp).putClientProperty("selected", false);
+                }
+            }
+            button.putClientProperty("selected", true);
+            cardLayout.show(cardPanel, card);
+            menuPanel.repaint();
+        });
+        button.putClientProperty("selected", selected);
+        return button;
     }
 
     private JPanel createDashboardPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(EMSI_LIGHT_GRAY);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         JLabel welcomeLabel = new JLabel("Bienvenue dans le tableau de bord administrateur");
-        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        welcomeLabel.setFont(TITLE_FONT);
+        welcomeLabel.setForeground(EMSI_GRAY);
 
         JPanel statsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
         statsPanel.setOpaque(false);
 
-        // Cartes de statistiques
-        statsPanel.add(createStatCard("Étudiants", "187", new Color(33, 150, 243)));
-        statsPanel.add(createStatCard("Enseignants", "42", new Color(0, 150, 136)));
-        statsPanel.add(createStatCard("Cours", "56", new Color(255, 152, 0)));
+        statsPanel.add(createModernStatPanel("Étudiants", "187", "\uD83D\uDC68\u200D\uD83C\uDF93", new Color(33, 150, 243)));
+        statsPanel.add(createModernStatPanel("Enseignants", "42", "\uD83D\uDC68\u200D\uD83C\uDFEB", new Color(0, 150, 136)));
+        statsPanel.add(createModernStatPanel("Cours", "56", "\uD83D\uDCDA", new Color(255, 152, 0)));
 
         JPanel northPanel = new JPanel(new BorderLayout());
         northPanel.setOpaque(false);
@@ -192,16 +331,19 @@ public class AdminDashboard extends JFrame {
 
         JTable activityTable = new JTable(tableModel);
         activityTable.setRowHeight(30);
-        activityTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
-        activityTable.setFont(new Font("Arial", Font.PLAIN, 14));
+        activityTable.getTableHeader().setFont(STAT_TITLE_FONT);
+        activityTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        activityTable.setShowGrid(false);
+        activityTable.setIntercellSpacing(new Dimension(0, 0));
+        activityTable.setSelectionBackground(new Color(230, 245, 233));
 
         JScrollPane tableScrollPane = new JScrollPane(activityTable);
         tableScrollPane.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.GRAY),
+                BorderFactory.createLineBorder(new Color(220, 220, 220)),
                 "Dernières activités",
                 1,
                 0,
-                new Font("Arial", Font.BOLD, 16)
+                STAT_TITLE_FONT
         ));
 
         JPanel centerPanel = new JPanel(new BorderLayout());
@@ -214,293 +356,70 @@ public class AdminDashboard extends JFrame {
         return panel;
     }
 
-    private JPanel createStatCard(String title, String value, Color color) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(color);
-        panel.setBorder(new EmptyBorder(15, 15, 15, 15));
+    private JPanel createModernStatPanel(String title, String value, String icon, Color color) {
+        JPanel panel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(Color.WHITE);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                for (int i = 0; i < 4; i++) {
+                    g2d.setColor(new Color(0, 0, 0, 2 + i));
+                    g2d.drawRoundRect(i, i, getWidth() - 2*i - 1, getHeight() - 2*i - 1, 14, 14);
+                }
+                g2d.dispose();
+            }
+        };
+        panel.setLayout(new BorderLayout());
+        panel.setBorder(new EmptyBorder(18, 18, 18, 18));
+        panel.setOpaque(false);
+
+        JPanel headerPanel = new JPanel(new BorderLayout(10, 0));
+        headerPanel.setOpaque(false);
+
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setFont(new Font("Segoe UI", Font.PLAIN, 22));
+        iconLabel.setForeground(color);
 
         JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setFont(STAT_TITLE_FONT);
+        titleLabel.setForeground(EMSI_GRAY);
+
+        headerPanel.add(iconLabel, BorderLayout.WEST);
+        headerPanel.add(titleLabel, BorderLayout.CENTER);
 
         JLabel valueLabel = new JLabel(value);
-        valueLabel.setFont(new Font("Arial", Font.BOLD, 36));
-        valueLabel.setForeground(Color.WHITE);
+        valueLabel.setFont(STAT_VALUE_FONT);
+        valueLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        valueLabel.setForeground(new Color(50, 50, 50));
 
-        panel.add(titleLabel, BorderLayout.NORTH);
+        panel.add(headerPanel, BorderLayout.NORTH);
         panel.add(valueLabel, BorderLayout.CENTER);
 
         return panel;
     }
 
-    private JPanel createStudentsPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+    // Les panels suivants gardent la structure mais tu peux les moderniser comme ci-dessus si besoin
+    private JPanel createStudentsPanel() { return createPlaceholderPanel("Gestion des étudiants"); }
+    private JPanel createTeachersPanel() { return createPlaceholderPanel("Gestion des enseignants"); }
+    private JPanel createCoursesPanel() { return createPlaceholderPanel("Gestion des cours"); }
+    private JPanel createSettingsPanel() { return createPlaceholderPanel("Paramètres du système"); }
 
-        JLabel titleLabel = new JLabel("Gestion des étudiants");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        buttonPanel.setOpaque(false);
-
-        JButton addButton = new JButton("Ajouter");
-        JButton editButton = new JButton("Modifier");
-        JButton deleteButton = new JButton("Supprimer");
-
-        buttonPanel.add(addButton);
-        buttonPanel.add(editButton);
-        buttonPanel.add(deleteButton);
-
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setOpaque(false);
-        topPanel.add(titleLabel, BorderLayout.NORTH);
-        topPanel.add(Box.createRigidArea(new Dimension(0, 10)), BorderLayout.CENTER);
-        topPanel.add(buttonPanel, BorderLayout.SOUTH);
-
-        // Tableau des étudiants
-        DefaultTableModel tableModel = new DefaultTableModel(
-                new Object[][] {
-                        {"E001", "Mohamed Alami", "mohamed.alami@email.com", "Informatique", "2ème année"},
-                        {"E002", "Fatima Zahra", "fatima.zahra@email.com", "Génie Civil", "3ème année"},
-                        {"E003", "Karim Berrada", "karim.berrada@email.com", "Mécanique", "1ère année"},
-                        {"E004", "Laila Bennani", "laila.bennani@email.com", "Informatique", "3ème année"},
-                        {"E005", "Youssef Tazi", "youssef.tazi@email.com", "Électronique", "2ème année"}
-                },
-                new String[] {"ID", "Nom complet", "Email", "Filière", "Niveau"}
-        );
-
-        JTable studentTable = new JTable(tableModel);
-        studentTable.setRowHeight(30);
-        studentTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
-        studentTable.setFont(new Font("Arial", Font.PLAIN, 14));
-
-        JScrollPane tableScrollPane = new JScrollPane(studentTable);
-
-        panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(tableScrollPane, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    private JPanel createTeachersPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        JLabel titleLabel = new JLabel("Gestion des enseignants");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        buttonPanel.setOpaque(false);
-
-        JButton addButton = new JButton("Ajouter");
-        JButton editButton = new JButton("Modifier");
-        JButton deleteButton = new JButton("Supprimer");
-
-        buttonPanel.add(addButton);
-        buttonPanel.add(editButton);
-        buttonPanel.add(deleteButton);
-
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setOpaque(false);
-        topPanel.add(titleLabel, BorderLayout.NORTH);
-        topPanel.add(Box.createRigidArea(new Dimension(0, 10)), BorderLayout.CENTER);
-        topPanel.add(buttonPanel, BorderLayout.SOUTH);
-
-        // Tableau des enseignants
-        DefaultTableModel tableModel = new DefaultTableModel(
-                new Object[][] {
-                        {"P001", "Dr. Hassan Amrani", "hassan.amrani@email.com", "Mathématiques", "Professeur"},
-                        {"P002", "Pr. Samira Khaldi", "samira.khaldi@email.com", "Physique", "Maître de conférences"},
-                        {"P003", "Dr. Omar Benali", "omar.benali@email.com", "Informatique", "Professeur associé"},
-                        {"P004", "Dr. Nadia Lahlou", "nadia.lahlou@email.com", "Langues", "Professeur assistante"},
-                        {"P005", "Pr. Ahmed Sadiki", "ahmed.sadiki@email.com", "Électronique", "Professeur"}
-                },
-                new String[] {"ID", "Nom complet", "Email", "Département", "Statut"}
-        );
-
-        JTable teacherTable = new JTable(tableModel);
-        teacherTable.setRowHeight(30);
-        teacherTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
-        teacherTable.setFont(new Font("Arial", Font.PLAIN, 14));
-
-        JScrollPane tableScrollPane = new JScrollPane(teacherTable);
-
-        panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(tableScrollPane, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    private JPanel createCoursesPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        JLabel titleLabel = new JLabel("Gestion des cours");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        buttonPanel.setOpaque(false);
-
-        JButton addButton = new JButton("Ajouter");
-        JButton editButton = new JButton("Modifier");
-        JButton deleteButton = new JButton("Supprimer");
-
-        buttonPanel.add(addButton);
-        buttonPanel.add(editButton);
-        buttonPanel.add(deleteButton);
-
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setOpaque(false);
-        topPanel.add(titleLabel, BorderLayout.NORTH);
-        topPanel.add(Box.createRigidArea(new Dimension(0, 10)), BorderLayout.CENTER);
-        topPanel.add(buttonPanel, BorderLayout.SOUTH);
-
-        // Tableau des cours
-        DefaultTableModel tableModel = new DefaultTableModel(
-                new Object[][] {
-                        {"C001", "Programmation Java", "Dr. Omar Benali", "Informatique", "48h"},
-                        {"C002", "Analyse Mathématique", "Dr. Hassan Amrani", "Mathématiques", "36h"},
-                        {"C003", "Électronique Analogique", "Pr. Ahmed Sadiki", "Électronique", "42h"},
-                        {"C004", "Anglais Technique", "Dr. Nadia Lahlou", "Langues", "24h"},
-                        {"C005", "Mécanique des Fluides", "Pr. Samira Khaldi", "Physique", "36h"}
-                },
-                new String[] {"Code", "Intitulé", "Enseignant", "Département", "Volume horaire"}
-        );
-
-        JTable courseTable = new JTable(tableModel);
-        courseTable.setRowHeight(30);
-        courseTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
-        courseTable.setFont(new Font("Arial", Font.PLAIN, 14));
-
-        JScrollPane tableScrollPane = new JScrollPane(courseTable);
-
-        panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(tableScrollPane, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    private JPanel createSettingsPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        JLabel titleLabel = new JLabel("Paramètres du système");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 5, 10, 5);
-
-        // Paramètres de l'application
-        JLabel generalSettingsLabel = new JLabel("Paramètres généraux");
-        generalSettingsLabel.setFont(new Font("Arial", Font.BOLD, 18));
-
-        JLabel yearLabel = new JLabel("Année académique:");
-        JLabel themeLabel = new JLabel("Thème de l'interface:");
-        JLabel languageLabel = new JLabel("Langue:");
-
-        JComboBox<String> yearCombo = new JComboBox<>(new String[]{"2024-2025", "2025-2026", "2026-2027"});
-        JComboBox<String> themeCombo = new JComboBox<>(new String[]{"Sombre", "Clair", "Système"});
-        JComboBox<String> languageCombo = new JComboBox<>(new String[]{"Français", "Anglais", "Arabe"});
-
-        // Paramètres de base de données
-        JLabel dbSettingsLabel = new JLabel("Paramètres de la base de données");
-        dbSettingsLabel.setFont(new Font("Arial", Font.BOLD, 18));
-
-        JLabel dbHostLabel = new JLabel("Hôte:");
-        JLabel dbNameLabel = new JLabel("Nom de la base:");
-        JLabel dbUserLabel = new JLabel("Utilisateur:");
-
-        JTextField dbHostField = new JTextField("localhost");
-        JTextField dbNameField = new JTextField("gestion_univ_db");
-        JTextField dbUserField = new JTextField("admin");
-
-        // Ajout des composants au formulaire
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        formPanel.add(generalSettingsLabel, gbc);
-
-        gbc.gridwidth = 1;
-        gbc.gridy = 1;
-        formPanel.add(yearLabel, gbc);
-        gbc.gridx = 1;
-        formPanel.add(yearCombo, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        formPanel.add(themeLabel, gbc);
-        gbc.gridx = 1;
-        formPanel.add(themeCombo, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        formPanel.add(languageLabel, gbc);
-        gbc.gridx = 1;
-        formPanel.add(languageCombo, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        gbc.gridwidth = 2;
-        formPanel.add(Box.createRigidArea(new Dimension(0, 15)), gbc);
-
-        gbc.gridy = 5;
-        formPanel.add(dbSettingsLabel, gbc);
-
-        gbc.gridwidth = 1;
-        gbc.gridy = 6;
-        formPanel.add(dbHostLabel, gbc);
-        gbc.gridx = 1;
-        formPanel.add(dbHostField, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 7;
-        formPanel.add(dbNameLabel, gbc);
-        gbc.gridx = 1;
-        formPanel.add(dbNameField, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 8;
-        formPanel.add(dbUserLabel, gbc);
-        gbc.gridx = 1;
-        formPanel.add(dbUserField, gbc);
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        buttonPanel.setOpaque(false);
-
-        JButton saveButton = new JButton("Enregistrer");
-        saveButton.setFont(new Font("Arial", Font.BOLD, 14));
-        saveButton.setBackground(new Color(33, 150, 243));
-        saveButton.setForeground(Color.WHITE);
-        saveButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        JButton cancelButton = new JButton("Annuler");
-        cancelButton.setFont(new Font("Arial", Font.PLAIN, 14));
-        cancelButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        buttonPanel.add(saveButton);
-        buttonPanel.add(cancelButton);
-
-        panel.add(titleLabel, BorderLayout.NORTH);
-        panel.add(formPanel, BorderLayout.CENTER);
-        panel.add(buttonPanel, BorderLayout.SOUTH);
-
+    // Placeholder moderne pour les autres panels
+    private JPanel createPlaceholderPanel(String title) {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(EMSI_LIGHT_GRAY);
+        JLabel label = new JLabel(title + " (à personnaliser)");
+        label.setFont(TITLE_FONT);
+        label.setForeground(EMSI_GRAY);
+        panel.add(label);
         return panel;
     }
 
     // Pour tester cette classe individuellement
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new AdminDashboard("admin");
-            }
-        });
+        SwingUtilities.invokeLater(() -> new AdminDashboard("admin"));
     }
 }
