@@ -7,10 +7,13 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.awt.geom.RoundRectangle2D;
 import java.sql.SQLException;
+import java.net.URL;
 
 import com.emsi.gestionuniv.view.enseignant.EnseignantDashboard;
 import com.emsi.gestionuniv.service.TeacherService;
 import com.emsi.gestionuniv.model.user.Teacher;
+import com.emsi.gestionuniv.app.MainApplication;
+import java.util.prefs.Preferences; // Import Preferences class
 
 /**
  * Classe principale de l'application qui implémente l'interface de connexion
@@ -118,7 +121,17 @@ public class EnseignantLogin {
      * @return Image du logo EMSI
      */
     private static Image createEMSILogoImage() {
-        // Création d'une image vide avec canal alpha
+        try {
+            // Essayer d'abord de charger l'image depuis les ressources
+            URL imageUrl = EnseignantLogin.class.getResource("/images/emsi_icon.png");
+            if (imageUrl != null) {
+                return new ImageIcon(imageUrl).getImage();
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement de l'image EMSI : " + e.getMessage());
+        }
+
+        // Si l'image n'est pas trouvée, créer une image par défaut
         BufferedImage img = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = img.createGraphics();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -132,7 +145,7 @@ public class EnseignantLogin {
         g2d.setFont(new Font("Arial", Font.BOLD, 32));
         FontMetrics fm = g2d.getFontMetrics();
         g2d.drawString("E", 22, 40);
-        g2d.dispose();  // Libère les ressources graphiques
+        g2d.dispose();
 
         return img;
     }
@@ -172,7 +185,7 @@ public class EnseignantLogin {
         mainPanel.setOpaque(false);  // Rend le panneau transparent pour voir l'effet personnalisé
 
         // Ajout des deux panneaux principaux (gauche et droit)
-        mainPanel.add(createLeftPanel(), BorderLayout.WEST);        // Panneau décoratif à gauche
+        mainPanel.add(createLeftPanel(frame), BorderLayout.WEST);        // Panneau décoratif à gauche
         mainPanel.add(createRightPanel(frame, service), BorderLayout.CENTER);  // Formulaire à droite
 
         return mainPanel;
@@ -182,9 +195,10 @@ public class EnseignantLogin {
      * Panneau gauche avec design moderne.
      * Contient le logo et les informations EMSI avec un fond dégradé vert.
      *
+     * @param frame La fenêtre parente
      * @return JPanel configuré pour la partie gauche
      */
-    private static JPanel createLeftPanel() {
+    private static JPanel createLeftPanel(JFrame frame) {
         // Panneau avec rendu graphique personnalisé
         JPanel panel = new JPanel() {
             @Override
@@ -212,30 +226,92 @@ public class EnseignantLogin {
                 g2d.fillOval(-50, getHeight()/2 - size/2, size, size);  // Grand cercle à gauche
                 g2d.fillOval(getWidth()-100, getHeight()/3 - size/3, size/2, size/2);  // Petit cercle en haut à droite
 
-                // Logo EMSI texte
-                g2d.setColor(Color.WHITE);
-                g2d.setFont(new Font("Arial", Font.BOLD, 38));
-                g2d.drawString("EMSI", getWidth()/2 - 50, getHeight()/2 - 80);
-
-                // Ligne séparatrice
-                g2d.setStroke(new BasicStroke(2f));
-                g2d.drawLine(getWidth()/2 - 70, getHeight()/2 - 60, getWidth()/2 + 70, getHeight()/2 - 60);
-
-                // Nom complet de l'école
-                g2d.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-                String text = "École Marocaine des Sciences de l'Ingénieur";
-                g2d.drawString(text, getWidth()/2 - g2d.getFontMetrics().stringWidth(text)/2, getHeight()/2 - 30);
-
-                // Message d'accueil
-                g2d.setFont(new Font("Segoe UI", Font.BOLD, 16));
-                String welcome = "Système de Gestion Universitaire";
-                g2d.drawString(welcome, getWidth()/2 - g2d.getFontMetrics().stringWidth(welcome)/2, getHeight()/2 + 30);
-
-                g2d.dispose();
+                g2d.dispose(); // Dispose of g2d after custom drawing
             }
         };
         panel.setPreferredSize(new Dimension(400, 600));  // Taille fixe pour le panneau gauche
         panel.setOpaque(false);  // Transparent pour voir le rendu personnalisé
+        panel.setLayout(new BorderLayout()); // Use BorderLayout for layout
+
+        // Ajout du bouton de retour
+        JButton backButton = new JButton("←") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                if (getModel().isPressed()) {
+                    g2d.setColor(Color.WHITE); // White color for contrast on green background
+                } else if (getModel().isRollover()) {
+                    g2d.setColor(EMSI_LIGHT_GRAY); // Light gray on hover
+                } else {
+                    g2d.setColor(Color.WHITE); // White color by default
+                }
+
+                g2d.setFont(new Font("Segoe UI", Font.BOLD, 24));
+                FontMetrics fm = g2d.getFontMetrics();
+                String text = "←";
+                int x = (getWidth() - fm.stringWidth(text)) / 2;
+                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                g2d.drawString(text, x, y);
+                g2d.dispose();
+            }
+        };
+        backButton.setPreferredSize(new Dimension(40, 40));
+        backButton.setBorderPainted(false);
+        backButton.setContentAreaFilled(false);
+        backButton.setFocusPainted(false);
+        backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        backButton.addActionListener(e -> {
+            frame.dispose();
+            MainApplication.main(new String[0]); // Call MainApplication.main()
+        });
+
+        JPanel topPanelLeft = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanelLeft.setOpaque(false); // Make this panel transparent too
+        topPanelLeft.setBorder(new EmptyBorder(10, 10, 0, 0)); // Add some padding
+        topPanelLeft.add(backButton);
+
+        panel.add(topPanelLeft, BorderLayout.NORTH); // Add the top panel with the button to the left panel
+
+        // Panel for other left panel content (like logo, text, etc.)
+        JPanel contentPanelLeft = new JPanel(){
+             @Override
+            protected void paintComponent(Graphics g) {
+                // We will draw the text and lines here instead of the main panel's paintComponent
+                 super.paintComponent(g);
+                 Graphics2D g2d = (Graphics2D) g.create();
+                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Logo EMSI texte
+                g2d.setColor(Color.WHITE);
+                g2d.setFont(new Font("Arial", Font.BOLD, 38));
+                String emsiText = "EMSI";
+                FontMetrics fmEmsi = g2d.getFontMetrics();
+                g2d.drawString(emsiText, (getWidth() - fmEmsi.stringWidth(emsiText)) / 2, getHeight()/2 - 80);
+
+                // Ligne séparatrice
+                g2d.setStroke(new BasicStroke(2f));
+                 int lineY = getHeight()/2 - 60;
+                g2d.drawLine(getWidth()/2 - 70, lineY, getWidth()/2 + 70, lineY);
+
+                // Nom complet de l'école
+                g2d.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+                String text = "École Marocaine des Sciences de l'Ingénieur";
+                 FontMetrics fmEcole = g2d.getFontMetrics();
+                g2d.drawString(text, (getWidth() - fmEcole.stringWidth(text)) / 2, getHeight()/2 - 30);
+
+                // Message d'accueil
+                g2d.setFont(new Font("Segoe UI", Font.BOLD, 16));
+                String welcome = "Système de Gestion Universitaire";
+                 FontMetrics fmWelcome = g2d.getFontMetrics();
+                g2d.drawString(welcome, (getWidth() - fmWelcome.stringWidth(welcome)) / 2, getHeight()/2 + 30);
+
+                g2d.dispose();
+            }
+        };
+        contentPanelLeft.setOpaque(false);
+        panel.add(contentPanelLeft, BorderLayout.CENTER); // Add content panel to the center
 
         return panel;
     }
@@ -256,13 +332,19 @@ public class EnseignantLogin {
         panel.setBorder(new EmptyBorder(80, 50, 80, 50));  // Marges importantes pour l'espace
         panel.setOpaque(false);
 
+        // Preferences pour "Se souvenir de moi"
+        Preferences prefs = Preferences.userNodeForPackage(EnseignantLogin.class);
+        final String PREF_EMAIL = "email";
+        final String PREF_REMEMBER_ME = "rememberMe";
+
         // Titre de connexion
-        JLabel titleLabel = new JLabel("Bienvenue");
+        JLabel titleLabel = new JLabel("Connexion Enseignant");
         titleLabel.setFont(TITLE_FONT);
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);  // Centré horizontalement
+        titleLabel.setForeground(EMSI_GRAY);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         panel.add(titleLabel);
 
-        panel.add(Box.createVerticalStrut(10));  // Espace vertical fixe
+        panel.add(Box.createVerticalStrut(30));
 
         // Sous-titre
         JLabel subtitleLabel = new JLabel("Connectez-vous à votre compte");
@@ -336,17 +418,30 @@ public class EnseignantLogin {
         loginButton.setMaximumSize(new Dimension(400, 50));
         loginButton.setPreferredSize(new Dimension(350, 50));
 
+        // Charger les préférences au démarrage
+        String savedEmail = prefs.get(PREF_EMAIL, "");
+        boolean rememberMeChecked = prefs.getBoolean(PREF_REMEMBER_ME, false);
+
+        if (!savedEmail.isEmpty()) {
+            emailField.setText(savedEmail);
+            rememberCheckbox.setSelected(rememberMeChecked);
+            // Optionally pre-fill password if saved (handle securely)
+            // String savedPassword = prefs.get(PREF_PASSWORD, "");
+            // if (!savedPassword.isEmpty()) {
+            //     passwordField.setText(savedPassword);
+            // }
+        }
+
         loginButton.addActionListener(actionEvent -> {
             // Récupération des valeurs des champs
-            String email = emailField.getText().trim(); // .trim() pour supprimer les espaces inutiles
+            String email = emailField.getText().trim();
             String pwd = new String(passwordField.getPassword());
 
-            // Vérification que les champs ne sont pas vides
-            if (email.isEmpty() || pwd.isEmpty()) {
+            // Vérification que les champs ne sont pas vides et ne contiennent pas le placeholder
+            if (email.isEmpty() || email.equals("email@emsi.ma") || pwd.isEmpty()) {
                 showErrorDialog(frame, "Veuillez remplir tous les champs");
                 return;
             }
-
 
             // Authentification de l'enseignant
             try {
@@ -354,9 +449,27 @@ public class EnseignantLogin {
 
                 if (teacher != null) {
                     // Authentification réussie
+                    // Save preferences if "Remember Me" is checked
+                    if (rememberCheckbox.isSelected()) {
+                        prefs.put(PREF_EMAIL, email);
+                        prefs.putBoolean(PREF_REMEMBER_ME, true);
+                        // Optionally save password (handle securely)
+                        // prefs.put(PREF_PASSWORD, pwd);
+                    } else {
+                        // Clear saved preferences if checkbox is unchecked
+                        prefs.remove(PREF_EMAIL);
+                        prefs.remove(PREF_REMEMBER_ME);
+                        // prefs.remove(PREF_PASSWORD);
+                    }
+
                     frame.dispose();
                     SwingUtilities.invokeLater(() -> {
-                        new EnseignantDashboard(teacher).setVisible(true);
+                        try {
+                            new EnseignantDashboard(teacher).setVisible(true);
+                        } catch (Exception e) {
+                            showErrorDialog(frame, "Erreur lors de l'ouverture du tableau de bord : " + e.getMessage());
+                            e.printStackTrace();
+                        }
                     });
                 } else {
                     showErrorDialog(frame, "Identifiants incorrects ou enseignant non trouvé");
@@ -377,6 +490,17 @@ public class EnseignantLogin {
         forgotPassword.setCursor(new Cursor(Cursor.HAND_CURSOR));  // Curseur main pour indiquer que c'est cliquable
         forgotPassword.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(forgotPassword);
+
+        // Add MouseListener for "Mot de passe oublié"
+        forgotPassword.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                JOptionPane.showMessageDialog(frame,
+                        "Veuillez contacter l'administration pour réinitialiser votre mot de passe.",
+                        "Mot de passe oublié",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
 
         // Espace flexible en bas du formulaire
         panel.add(Box.createVerticalGlue());
@@ -643,5 +767,22 @@ public class EnseignantLogin {
             frame.setLocationRelativeTo(null);           // Centre la fenêtre sur l'écran
             frame.setVisible(visible);                   // Affiche ou masque la fenêtre selon le paramètre
         });
+    }
+
+    private ImageIcon loadImage(String path) {
+        try {
+            // Essayer de charger l'image depuis le dossier images
+            URL imageUrl = getClass().getResource("/images/" + path);
+            if (imageUrl != null) {
+                return new ImageIcon(imageUrl);
+            } else {
+                System.err.println("Image non trouvée : /images/" + path);
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement de l'image : /images/" + path);
+            e.printStackTrace();
+            return null;
+        }
     }
 }

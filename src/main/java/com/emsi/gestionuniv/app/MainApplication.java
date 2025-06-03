@@ -132,12 +132,10 @@ public class MainApplication {
                 try {
                     enseignantPanel.setBackground(EMSI_LIGHT_GREEN);
 
-                    // Version simplifiée sans Timer
+                    // Appeler la méthode main d'EnseignantLogin
                     SwingUtilities.invokeLater(() -> {
-                        System.out.println("Ouverture EnseignantLogin...");
-                        EnseignantLogin login = new EnseignantLogin();
-                        login.setVisible(true); // Double assurance
-                        frame.setVisible(false); // Alternative à dispose()
+                        EnseignantLogin.main(new String[0]);
+                        frame.dispose();
                     });
 
                 } catch (Exception ex) {

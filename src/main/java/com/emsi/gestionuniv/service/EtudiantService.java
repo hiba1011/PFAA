@@ -8,6 +8,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Service gérant les opérations liées aux étudiants :
@@ -244,5 +246,58 @@ public class EtudiantService {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public boolean updateStudentProfile(Student etudiant) {
+        try (Connection conn = DBConnect.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE etudiants SET prenom=?, nom=?, mot_de_passe=? WHERE id=?")) {
+            ps.setString(1, etudiant.getPrenom());
+            ps.setString(2, etudiant.getNom());
+            ps.setString(3, etudiant.getPassword());
+            ps.setInt(4, etudiant.getId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Récupère la liste des étudiants d'une classe (groupe) spécifique en utilisant le nom du groupe.
+     * @param groupName Le nom de la classe (groupe).
+     * @return Une liste d'objets Student.
+     */
+    public List<Student> getStudentsByGroupName(String groupName) {
+        List<Student> students = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBConnect.getConnection();
+            if (conn == null) {
+                throw new SQLException("Impossible d'établir une connexion à la base de données");
+            }
+
+            // SQL query to select students by group name
+            String sql = "SELECT e.* FROM gestion_universitaire.etudiants e WHERE e.groupe = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, groupName);
+
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                students.add(createStudentFromResultSet(rs));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la récupération des étudiants par groupe : " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+
+        return students;
     }
 }
