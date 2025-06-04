@@ -5,8 +5,10 @@ public class Student extends User {
     private String filiere;
     private String promotion;
     private String photo;
+    private String groupe;
 
-    public Student(int id, String matricule, String prenom, String nom, String email, String filiere, String promotion, String photo) {
+    public Student(int id, String matricule, String prenom, String nom, String email, String filiere, String promotion,
+            String photo) {
         super(id, "", nom, prenom, email, "STUDENT"); // On passe un mot de passe vide et le rôle "STUDENT"
         this.matricule = matricule;
         this.filiere = filiere;
@@ -53,6 +55,14 @@ public class Student extends User {
 
     public void setPhoto(String photo) {
         this.photo = photo;
+    }
+
+    public String getGroupe() {
+        return groupe;
+    }
+
+    public void setGroupe(String groupe) {
+        this.groupe = groupe;
     }
 
     @Override
