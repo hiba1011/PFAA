@@ -241,7 +241,7 @@ public class EtudiantService {
      * @param pstmt Le PreparedStatement à fermer
      * @param conn  La connexion à fermer
      */
-    private static void closeResources(ResultSet rs, PreparedStatement pstmt, Connection conn) {
+    static void closeResources(ResultSet rs, PreparedStatement pstmt, Connection conn) {
         try {
             if (rs != null)
                 rs.close();

@@ -8,6 +8,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
 import java.net.URL;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.emsi.gestionuniv.model.academic.cours;
 import com.emsi.gestionuniv.model.user.Teacher;
@@ -24,6 +26,8 @@ import com.emsi.gestionuniv.model.user.Student;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.ImageIcon;
 import javax.swing.table.TableCellRenderer;
+import com.emsi.gestionuniv.model.planning.Emploi_de_temps;
+import com.emsi.gestionuniv.service.EmploiDuTempsService;
 
 import static com.emsi.gestionuniv.view.etudiant.EtudiantDashboard.EMSI_LIGHT_GREEN;
 
@@ -845,40 +849,103 @@ public class EnseignantDashboard extends JFrame {
         headerPanel.add(weekSelector, BorderLayout.EAST);
 
         // Grille du planning
-        JPanel scheduleGrid = new JPanel(new GridLayout(6, 6, 1, 1));
-        scheduleGrid.setBackground(Color.WHITE);
+        JPanel scheduleGrid = new JPanel(new GridLayout(8, 6, 3, 3)); // Adjusted rows for more time slots
+        scheduleGrid.setBackground(EMSI_GREEN); // Use EMSI green for grid lines
 
         // En-têtes des colonnes (jours)
         String[] days = {"", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"};
-        String[] hours = {"8:30-10:30", "10:45-12:45", "14:00-16:00", "16:15-18:15", "18:30-20:30"};
+        // Adjusted hours array to include all unique time slots from the data
+        String[] hours = {"08:30-10:30", "10:00-12:00", "10:45-12:45", "14:00-16:00", "16:15-18:15", "18:30-20:30", "08:30-11:30"};
+
+        // Map to store timetable entries by day and hour
+        Map<String, Map<String, Emploi_de_temps>> timetableMap = new HashMap<>();
+
+        // Fetch timetable data for the current teacher
+        EmploiDuTempsService emploiDuTempsService = new EmploiDuTempsService();
+        List<Emploi_de_temps> teacherTimetable = emploiDuTempsService.getEmploiDuTempsParEnseignant(currentTeacherId);
+
+        // Map English day names to French day names
+        Map<String, String> englishToFrenchDays = new HashMap<>();
+        englishToFrenchDays.put("Monday", "Lundi");
+        englishToFrenchDays.put("Tuesday", "Mardi");
+        englishToFrenchDays.put("Wednesday", "Mercredi");
+        englishToFrenchDays.put("Thursday", "Jeudi");
+        englishToFrenchDays.put("Friday", "Vendredi");
+        // Add other days if necessary (Saturday, Sunday)
+        englishToFrenchDays.put("Saturday", "Samedi");
+        englishToFrenchDays.put("Sunday", "Dimanche");
+
+        // Populate the timetable map
+        for (Emploi_de_temps entry : teacherTimetable) {
+            String englishDay = entry.getJourSemaine();
+            String frenchDay = englishToFrenchDays.get(englishDay);
+
+            System.out.println("DEBUG: Processing entry: " + entry); // Added logging
+            System.out.println("DEBUG: Mapped English day " + englishDay + " to French day " + frenchDay); // Added logging
+
+            if (frenchDay != null) {
+                String startTime = entry.getHeureDebut().substring(0, 5);
+                String endTime = entry.getHeureFin().substring(0, 5);
+                String timeSlot = startTime + "-" + endTime;
+
+                System.out.println("DEBUG: Processing time slot: " + timeSlot); // Added logging
+
+                timetableMap.computeIfAbsent(frenchDay, k -> new HashMap<>()).put(timeSlot, entry);
+                System.out.println("DEBUG: Added entry to timetableMap for day " + frenchDay + " and time slot " + timeSlot); // Added logging
+            } else {
+                System.out.println("DEBUG: No French mapping found for English day: " + englishDay); // Added logging
+            }
+        }
 
         // Création de la grille
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 6; j++) {
+        for (int i = 0; i < 8; i++) { // Loop through rows (including hour headers)
+            for (int j = 0; j < 6; j++) { // Loop through columns (including day headers)
                 JPanel cell = new JPanel(new BorderLayout());
-                cell.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                cell.setBorder(BorderFactory.createEmptyBorder());
+                cell.setBackground(BACKGROUND_WHITE); // Set cell background to white
+
+                String currentDay = days[j]; // Get French day from grid header
+
+                if (i > 0 && j > 0) { // Only process cells within the timetable grid area (not headers)
+                    String currentTimeSlot = hours[i-1]; // Get time slot from hours array using row index
+                    System.out.println("DEBUG: Checking timetableMap for day " + currentDay + " and time slot " + currentTimeSlot); // Added logging
+                    if (timetableMap.containsKey(currentDay) && timetableMap.get(currentDay).containsKey(currentTimeSlot)) {
+                        System.out.println("DEBUG: Timetable entry found for day " + currentDay + " and time slot " + currentTimeSlot); // Added logging
+                        Emploi_de_temps courseEntry = timetableMap.get(currentDay).get(currentTimeSlot);
+
+                        System.out.println("DEBUG: Calling getJPanel for course entry: " + courseEntry); // Added logging
+                        JPanel courseDetailsPanel = getJPanel(courseEntry);
+
+                        if (courseDetailsPanel != null) { // Check if panel is not null
+                            cell.setBackground(EMSI_LIGHT_GRAY); // Highlight cells with courses
+                            cell.add(courseDetailsPanel, BorderLayout.CENTER);
+                            System.out.println("DEBUG: Added courseDetailsPanel to cell for " + currentDay + " " + currentTimeSlot); // Added logging
+                        } else {
+                             System.out.println("DEBUG: getJPanel returned null for entry: " + courseEntry); // Added logging
+                        }
+                    } else {
+                        System.out.println("DEBUG: No timetable entry found for day " + currentDay + " and time slot " + currentTimeSlot); // Added logging
+                    }
+                }
 
                 if (i == 0) {
                     // En-têtes des jours
                     JLabel dayLabel = new JLabel(days[j], SwingConstants.CENTER);
                     dayLabel.setFont(HEADING_FONT);
-                    dayLabel.setForeground(EMSI_GRAY);
+                    dayLabel.setForeground(Color.WHITE); // White text for headers
+                    dayLabel.setBackground(EMSI_GREEN); // Green background for headers
+                    dayLabel.setOpaque(true);
+                    dayLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
                     cell.add(dayLabel, BorderLayout.CENTER);
                 } else if (j == 0) {
                     // En-têtes des heures
                     JLabel hourLabel = new JLabel(hours[i-1], SwingConstants.CENTER);
-                    hourLabel.setFont(SUBTITLE_FONT);
-                    hourLabel.setForeground(EMSI_GRAY);
+                    hourLabel.setFont(HEADING_FONT);
+                    hourLabel.setForeground(Color.WHITE); // White text for headers
+                    hourLabel.setBackground(EMSI_GREEN); // Green background for headers
+                    hourLabel.setOpaque(true);
+                    hourLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
                     cell.add(hourLabel, BorderLayout.CENTER);
-                } else {
-                    // Cellules du planning
-                    cell.setBackground(Color.WHITE);
-                    if (i == 1 && j == 2) {
-                        cell.setBackground(EMSI_LIGHT_GRAY);
-                        JLabel courseLabel = new JLabel("Programmation Java", SwingConstants.CENTER);
-                        courseLabel.setFont(SUBTITLE_FONT);
-                        cell.add(courseLabel, BorderLayout.CENTER);
-                    }
                 }
 
                 scheduleGrid.add(cell);
@@ -889,31 +956,65 @@ public class EnseignantDashboard extends JFrame {
         scrollPane.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
 
         // Panel des actions
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT)); // Align to the right
         actionPanel.setOpaque(false);
         actionPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
 
-        JButton addButton = new JButton("Ajouter un cours");
-        JButton editButton = new JButton("Modifier");
         JButton printButton = new JButton("Imprimer le planning");
 
-        addButton.setBackground(EMSI_GREEN);
-        editButton.setBackground(EMSI_GREEN);
         printButton.setBackground(EMSI_GREEN);
-
-        addButton.setForeground(Color.WHITE);
-        editButton.setForeground(Color.WHITE);
         printButton.setForeground(Color.WHITE);
+        printButton.setFont(SUBTITLE_FONT);
+        printButton.setFocusPainted(false);
+        printButton.setBorderPainted(false);
+        printButton.setPreferredSize(new Dimension(180, 35)); // Set preferred size
 
-        actionPanel.add(addButton);
-        actionPanel.add(editButton);
         actionPanel.add(printButton);
 
         panel.add(headerPanel, BorderLayout.NORTH);
         panel.add(scrollPane, BorderLayout.CENTER);
         panel.add(actionPanel, BorderLayout.SOUTH);
 
+        // Ensure the panel is updated
+        panel.revalidate();
+        panel.repaint();
+
         return panel;
+    }
+
+    private static JPanel getJPanel(Emploi_de_temps courseEntry) {
+        System.out.println("DEBUG: Inside getJPanel for entry: " + courseEntry); // Added logging
+        JPanel courseDetailsPanel = new JPanel();
+        courseDetailsPanel.setLayout(new BoxLayout(courseDetailsPanel, BoxLayout.Y_AXIS));
+        courseDetailsPanel.setOpaque(true); // Make sure it is opaque
+        courseDetailsPanel.setBackground(Color.LIGHT_GRAY); // Set a background color
+        courseDetailsPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8)); // Increased padding
+
+        System.out.println("DEBUG: Creating matiereLabel..."); // Added logging
+        JLabel matiereLabel = new JLabel(courseEntry.getMatiere(), SwingConstants.CENTER);
+        matiereLabel.setFont(new Font("Segoe UI", Font.BOLD, 13)); // Slightly larger font
+        matiereLabel.setForeground(EMSI_DARK_GREEN); // Use dark green for course title
+        matiereLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        System.out.println("DEBUG: Creating salleLabel..."); // Added logging
+        JLabel salleLabel = new JLabel("Salle: " + courseEntry.getSalle(), SwingConstants.CENTER);
+        salleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        salleLabel.setForeground(EMSI_GRAY); // Use gray for details
+        salleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        System.out.println("DEBUG: Creating groupeLabel..."); // Added logging
+        JLabel groupeLabel = new JLabel("Classe: " + courseEntry.getGroupe(), SwingConstants.CENTER);
+        groupeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        groupeLabel.setForeground(EMSI_GRAY); // Use gray for details
+        groupeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        System.out.println("DEBUG: Adding components to courseDetailsPanel..."); // Added logging
+        courseDetailsPanel.add(matiereLabel);
+        courseDetailsPanel.add(Box.createVerticalStrut(4)); // Add spacing
+        courseDetailsPanel.add(salleLabel);
+        courseDetailsPanel.add(groupeLabel);
+        System.out.println("DEBUG: Finished adding components. Returning panel."); // Added logging
+        return courseDetailsPanel;
     }
 
     private void showMessagesPanel() {
@@ -1091,7 +1192,7 @@ public class EnseignantDashboard extends JFrame {
         
         // Remplir le sélecteur de cours
         CoursService coursService = new CoursService();
-        List<cours> coursList = coursService.getCoursByEnseignant(currentTeacherId);
+        List<cours> coursList = coursService.getCoursByEnseignant(currentCoursId);
         for (cours c : coursList) {
             courseSelector.addItem(c.getCode() + " - " + c.getTitre());
         }
