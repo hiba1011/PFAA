@@ -19,7 +19,8 @@ import java.util.List;
  */
 public class EtudiantService {
 
-    // Référence à un repository en mémoire (peut être utilisé pour tests ou extensions)
+    // Référence à un repository en mémoire (peut être utilisé pour tests ou
+    // extensions)
     private StudentRepository studentRepository;
 
     // Nom du schéma et de la table utilisée dans la base de données
@@ -34,11 +35,12 @@ public class EtudiantService {
     }
 
     /**
-     * Méthode statique permettant de rechercher un étudiant par matricule et mot de passe.
+     * Méthode statique permettant de rechercher un étudiant par matricule et mot de
+     * passe.
      * Sert principalement à l'authentification.
      *
      * @param matricule Matricule fourni par l'utilisateur
-     * @param password Mot de passe fourni par l'utilisateur
+     * @param password  Mot de passe fourni par l'utilisateur
      * @return Un objet Student si les identifiants sont valides, sinon null
      */
     public static Student findStudentByMatricule(String matricule, String password) {
@@ -96,7 +98,7 @@ public class EtudiantService {
      * Authentifie un étudiant à l'aide de son matricule et mot de passe
      *
      * @param matricule Matricule fourni
-     * @param password Mot de passe fourni
+     * @param password  Mot de passe fourni
      * @return true si les identifiants sont valides, false sinon
      */
     public boolean authenticate(String matricule, String password) {
@@ -176,7 +178,7 @@ public class EtudiantService {
     /**
      * Met à jour le chemin de la photo de profil d’un étudiant donné
      *
-     * @param id Identifiant de l’étudiant
+     * @param id        Identifiant de l’étudiant
      * @param photoPath Nouveau chemin de la photo
      * @return true si la mise à jour a réussi, false sinon
      */
@@ -224,6 +226,7 @@ public class EtudiantService {
             student.setPromotion(rs.getString("promotion"));
             student.setFiliere(rs.getString("filiere"));
             student.setPhoto(rs.getString("photo"));
+            student.setGroupe(rs.getString("groupe"));
             return student;
         } catch (SQLException e) {
             System.err.println("ERREUR lors de la construction de Student à partir du ResultSet: " + e.getMessage());
@@ -234,15 +237,18 @@ public class EtudiantService {
     /**
      * Ferme les ressources JDBC pour éviter les fuites mémoire
      *
-     * @param rs Le ResultSet à fermer
+     * @param rs    Le ResultSet à fermer
      * @param pstmt Le PreparedStatement à fermer
-     * @param conn La connexion à fermer
+     * @param conn  La connexion à fermer
      */
     private static void closeResources(ResultSet rs, PreparedStatement pstmt, Connection conn) {
         try {
-            if (rs != null) rs.close();
-            if (pstmt != null) pstmt.close();
-            if (conn != null) conn.close();
+            if (rs != null)
+                rs.close();
+            if (pstmt != null)
+                pstmt.close();
+            if (conn != null)
+                conn.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -250,8 +256,8 @@ public class EtudiantService {
 
     public boolean updateStudentProfile(Student etudiant) {
         try (Connection conn = DBConnect.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "UPDATE etudiants SET prenom=?, nom=?, mot_de_passe=? WHERE id=?")) {
+                PreparedStatement ps = conn.prepareStatement(
+                        "UPDATE etudiants SET prenom=?, nom=?, mot_de_passe=? WHERE id=?")) {
             ps.setString(1, etudiant.getPrenom());
             ps.setString(2, etudiant.getNom());
             ps.setString(3, etudiant.getPassword());
@@ -264,7 +270,9 @@ public class EtudiantService {
     }
 
     /**
-     * Récupère la liste des étudiants d'une classe (groupe) spécifique en utilisant le nom du groupe.
+     * Récupère la liste des étudiants d'une classe (groupe) spécifique en utilisant
+     * le nom du groupe.
+     * 
      * @param groupName Le nom de la classe (groupe).
      * @return Une liste d'objets Student.
      */
