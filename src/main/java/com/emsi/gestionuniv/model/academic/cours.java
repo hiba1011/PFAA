@@ -2,37 +2,57 @@ package com.emsi.gestionuniv.model.academic;
 
 public class cours {
     private int id;
+    private String titre;
+    private String specialite;
     private String code;
     private String intitule;
     private String filiere;
     private String niveau;
     private int effectif;
     private String volumeHoraire;
-    private int enseignantId;
 
     // Constructeur par défaut
     public cours() {
     }
 
     // Constructeur avec paramètres
-    public cours(int id, String code, String intitule, String filiere, String niveau, int effectif, String volumeHoraire, int enseignantId) {
+    public cours(int id, String titre, String specialite, String code, String intitule, String filiere, String niveau,
+            int effectif,
+            String volumeHoraire) {
         this.id = id;
+        this.titre = titre;
+        this.specialite = specialite;
         this.code = code;
         this.intitule = intitule;
         this.filiere = filiere;
         this.niveau = niveau;
         this.effectif = effectif;
         this.volumeHoraire = volumeHoraire;
-        this.enseignantId = enseignantId;
     }
 
-    // Getters et Setters
+    // Getters et setters
     public int getId() {
         return id;
     }
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getTitre() {
+        return titre;
+    }
+
+    public void setTitre(String titre) {
+        this.titre = titre;
+    }
+
+    public String getSpecialite() {
+        return specialite;
+    }
+
+    public void setSpecialite(String specialite) {
+        this.specialite = specialite;
     }
 
     public String getCode() {
@@ -83,40 +103,18 @@ public class cours {
         this.volumeHoraire = volumeHoraire;
     }
 
-    public int getEnseignantId() {
-        return enseignantId;
-    }
-
-    public void setEnseignantId(int enseignantId) {
-        this.enseignantId = enseignantId;
-    }
-
     @Override
     public String toString() {
         return "Cours{" +
                 "id=" + id +
+                ", titre='" + titre + '\'' +
+                ", specialite='" + specialite + '\'' +
                 ", code='" + code + '\'' +
                 ", intitule='" + intitule + '\'' +
                 ", filiere='" + filiere + '\'' +
                 ", niveau='" + niveau + '\'' +
                 ", effectif=" + effectif +
                 ", volumeHoraire='" + volumeHoraire + '\'' +
-                ", enseignantId=" + enseignantId +
                 '}';
-    }
-
-    // Méthode pour obtenir le titre complet du cours
-    public String getTitre() {
-        return code + " - " + intitule;
-    }
-
-    // Méthode pour obtenir le programme complet
-    public String getProgramme() {
-        return filiere + " - " + niveau;
-    }
-
-    // Méthode pour obtenir le nombre d'étudiants
-    public int getNombreEtudiants() {
-        return effectif;
     }
 }

@@ -1,7 +1,5 @@
 package com.emsi.gestionuniv.model.academic;
 
-import com.emsi.gestionuniv.model.user.Student;
-
 public class Note {
     private int id;
     private int etudiantId;
@@ -10,25 +8,30 @@ public class Note {
     private double noteTP;
     private double noteExamen;
     private double moyenne;
-    private Student etudiant;
-    private cours cours;
+    private String matiere;
+    private double controleContinu;
+    private double examen;
+    private double tp;
+    private double noteFinale;
+    private String validation;
+    private String nomEtudiant; // Ajoute cet attribut
+    private String prenomEtudiant; // Ajoute cet attribut
 
     // Constructeur par défaut
     public Note() {
     }
 
     // Constructeur avec paramètres
-    public Note(int id, int etudiantId, int coursId, double noteCC, double noteTP, double noteExamen) {
-        this.id = id;
-        this.etudiantId = etudiantId;
-        this.coursId = coursId;
-        this.noteCC = noteCC;
-        this.noteTP = noteTP;
-        this.noteExamen = noteExamen;
-        calculerMoyenne();
+    public Note(String matiere, double controleContinu, double examen, double tp) {
+        this.matiere = matiere;
+        this.controleContinu = controleContinu;
+        this.examen = examen;
+        this.tp = tp;
+        calculerNoteFinale();
+        valider();
     }
 
-    // Getters et Setters
+    // Getters et setters
     public int getId() {
         return id;
     }
@@ -59,7 +62,6 @@ public class Note {
 
     public void setNoteCC(double noteCC) {
         this.noteCC = noteCC;
-        calculerMoyenne();
     }
 
     public double getNoteTP() {
@@ -68,7 +70,6 @@ public class Note {
 
     public void setNoteTP(double noteTP) {
         this.noteTP = noteTP;
-        calculerMoyenne();
     }
 
     public double getNoteExamen() {
@@ -77,7 +78,6 @@ public class Note {
 
     public void setNoteExamen(double noteExamen) {
         this.noteExamen = noteExamen;
-        calculerMoyenne();
     }
 
     public double getMoyenne() {
@@ -88,55 +88,95 @@ public class Note {
         this.moyenne = moyenne;
     }
 
-    public Student getEtudiant() {
-        return etudiant;
+    // Pour affichage des notes dans l'onglet étudiant
+    public String getMatiere() {
+        return matiere;
     }
 
-    public void setEtudiant(Student etudiant) {
-        this.etudiant = etudiant;
+    public void setMatiere(String matiere) {
+        this.matiere = matiere;
     }
 
-    public cours getCours() {
-        return cours;
+    public double getControleContinu() {
+        return controleContinu;
     }
 
-    public void setCours(cours cours) {
-        this.cours = cours;
+    public void setControleContinu(double controleContinu) {
+        this.controleContinu = controleContinu;
+        calculerNoteFinale();
     }
 
-    // Méthode pour calculer la moyenne
-    private void calculerMoyenne() {
-        // Calcul de la moyenne pondérée
+    public double getExamen() {
+        return examen;
+    }
+
+    public void setExamen(double examen) {
+        this.examen = examen;
+        calculerNoteFinale();
+    }
+
+    public double getTp() {
+        return tp;
+    }
+
+    public void setTp(double tp) {
+        this.tp = tp;
+        calculerNoteFinale();
+    }
+
+    public double getNoteFinale() {
+        return noteFinale;
+    }
+
+    public void setNoteFinale(double noteFinale) {
+        this.noteFinale = noteFinale;
+    }
+
+    public String getValidation() {
+        return validation;
+    }
+
+    public void setValidation(String validation) {
+        this.validation = validation;
+    }
+
+    public String getNomEtudiant() {
+        return nomEtudiant;
+    }
+
+    public void setNomEtudiant(String nomEtudiant) {
+        this.nomEtudiant = nomEtudiant;
+    }
+
+    public String getPrenomEtudiant() {
+        return prenomEtudiant;
+    }
+
+    public void setPrenomEtudiant(String prenomEtudiant) {
+        this.prenomEtudiant = prenomEtudiant;
+    }
+
+    // Méthode pour calculer la note finale
+    private void calculerNoteFinale() {
+        // Calcul de la note finale
         // CC : 30%, TP : 20%, Examen : 50%
-        this.moyenne = (noteCC * 0.3) + (noteTP * 0.2) + (noteExamen * 0.5);
+        this.noteFinale = (controleContinu * 0.3) + (tp * 0.2) + (examen * 0.5);
     }
 
-    // Méthode pour vérifier si l'étudiant a réussi
-    public boolean isReussi() {
-        return moyenne >= 10.0;
-    }
-
-    // Méthode pour obtenir la mention
-    public String getMention() {
-        if (moyenne >= 16) return "Très Bien";
-        if (moyenne >= 14) return "Bien";
-        if (moyenne >= 12) return "Assez Bien";
-        if (moyenne >= 10) return "Passable";
-        return "Insuffisant";
+    // Méthode pour valider la note
+    private void valider() {
+        this.validation = noteFinale >= 10.0 ? "Validé" : "Non Validé";
     }
 
     @Override
     public String toString() {
         return "Note{" +
-                "id=" + id +
-                ", etudiantId=" + etudiantId +
-                ", coursId=" + coursId +
-                ", noteCC=" + noteCC +
-                ", noteTP=" + noteTP +
-                ", noteExamen=" + noteExamen +
-                ", moyenne=" + moyenne +
-                ", etudiant=" + (etudiant != null ? etudiant.getMatricule() : "null") +
-                ", cours=" + (cours != null ? cours.getCode() : "null") +
+                "matiere='" + matiere + '\'' +
+                ", controleContinu=" + controleContinu +
+                ", examen=" + examen +
+                ", tp=" + tp +
+                ", noteFinale=" + noteFinale +
+                ", validation='" + validation + '\'' +
                 '}';
     }
 }

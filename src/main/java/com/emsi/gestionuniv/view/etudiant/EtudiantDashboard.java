@@ -5,6 +5,8 @@ import com.emsi.gestionuniv.app.MainApplication;
 import com.emsi.gestionuniv.service.EtudiantService;
 import com.emsi.gestionuniv.model.planning.Emploi_de_temps;
 import com.emsi.gestionuniv.service.EmploiDuTempsService;
+import com.emsi.gestionuniv.model.academic.Note;
+import com.emsi.gestionuniv.service.NoteService;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -382,7 +384,7 @@ public class EtudiantDashboard {
         tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 15));
         tabbedPane.addTab("Tableau de bord", createDashboardTab());
         tabbedPane.addTab("Informations", createStaticInfoTab());
-        tabbedPane.addTab("Notes", createStaticNotesTab());
+        tabbedPane.addTab("Notes", createNotesTab());
         tabbedPane.addTab("Emploi du temps", createEmploiDuTempsTab());
         tabbedPane.addTab("Messages", createMessagesTab()); // <-- Ajout ici
 
@@ -442,7 +444,7 @@ public class EtudiantDashboard {
     }
 
     // Onglet "Notes" statique et élégant
-    private JPanel createStaticNotesTab() {
+    private JPanel createNotesTab() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(WHITE);
 
@@ -453,16 +455,20 @@ public class EtudiantDashboard {
         panel.add(titre, BorderLayout.NORTH);
 
         String[] columns = { "Matière", "Contrôle Continu", "Examen", "TP", "Note Finale", "Validation" };
-        Object[][] data = {
-                { "Programmation Java", "14.5", "16.0", "15.0", "15.2", "Validé" },
-                { "Python Avancé", "13.0", "15.5", "14.0", "14.2", "Validé" },
-                { "Conception de Réseaux", "12.5", "13.0", "13.5", "13.0", "Validé" },
-                { "Systèmes d’exploitation", "11.0", "12.0", "12.5", "11.8", "Validé" },
-                { "Développement Web", "15.0", "17.0", "16.0", "16.0", "Validé" },
-                { "Bases de Données", "10.0", "11.5", "12.0", "11.2", "Validé" },
-                { "Cybersécurité", "13.5", "14.0", "13.0", "13.5", "Validé" },
-                { "Projet encadré", "—", "—", "18.0", "18.0", "Validé" }
-        };
+
+        // Récupérer les notes de l'étudiant
+        List<Note> notes = new NoteService().getNotesByEtudiantId(etudiant.getId());
+
+        Object[][] data = new Object[notes.size()][columns.length];
+        for (int i = 0; i < notes.size(); i++) {
+            var n = notes.get(i);
+            data[i][0] = n.getMatiere();
+            data[i][1] = n.getControleContinu();
+            data[i][2] = n.getExamen();
+            data[i][3] = n.getTp();
+            data[i][4] = n.getNoteFinale();
+            data[i][5] = n.getValidation();
+        }
 
         DefaultTableModel model = new DefaultTableModel(data, columns) {
             @Override
@@ -480,12 +486,10 @@ public class EtudiantDashboard {
         ((DefaultTableCellRenderer) table.getTableHeader().getDefaultRenderer())
                 .setHorizontalAlignment(SwingConstants.CENTER);
 
-        // Centrer le texte dans les cellules
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
         table.setDefaultRenderer(Object.class, centerRenderer);
 
-        // Alternance de couleurs de lignes
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,

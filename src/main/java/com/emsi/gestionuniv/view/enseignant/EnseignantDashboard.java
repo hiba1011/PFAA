@@ -9,6 +9,7 @@ import java.awt.event.*;
 import java.util.List;
 import java.net.URL;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.emsi.gestionuniv.model.academic.cours;
@@ -24,19 +25,22 @@ import com.emsi.gestionuniv.service.TeacherService;
 import com.emsi.gestionuniv.service.EtudiantService;
 import com.emsi.gestionuniv.model.user.Student;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.ImageIcon;
 import javax.swing.table.TableCellRenderer;
 import com.emsi.gestionuniv.model.planning.Emploi_de_temps;
 import com.emsi.gestionuniv.service.EmploiDuTempsService;
+import java.text.DecimalFormat; // Ajoute cet import en haut du fichier
 
 import static com.emsi.gestionuniv.view.etudiant.EtudiantDashboard.EMSI_LIGHT_GREEN;
 
 /**
- * Tableau de bord pour les enseignants de l'application de gestion universitaire.
+ * Tableau de bord pour les enseignants de l'application de gestion
+ * universitaire.
  * Cette classe crée une interface graphique moderne pour les enseignants
- * avec une barre latérale de navigation, un en-tête et un espace principal de contenu.
+ * avec une barre latérale de navigation, un en-tête et un espace principal de
+ * contenu.
  */
 public class EnseignantDashboard extends JFrame {
+    CoursService coursService = new CoursService();
     private static final long serialVersionUID = 1L;
     private Teacher currentTeacher;
     private int currentTeacherId;
@@ -65,7 +69,9 @@ public class EnseignantDashboard extends JFrame {
     private JPanel contentPanel;
 
     /**
-     * Constructeur qui initialise le tableau de bord avec les informations de l'enseignant
+     * Constructeur qui initialise le tableau de bord avec les informations de
+     * l'enseignant
+     * 
      * @param teacher L'objet Teacher représentant l'enseignant connecté
      */
     public EnseignantDashboard(Teacher teacher) {
@@ -76,7 +82,7 @@ public class EnseignantDashboard extends JFrame {
         this.teacher = teacher;
         this.currentTeacher = teacher;
         this.currentTeacherId = teacher.getId();
-        
+
         setTitle("Tableau de bord enseignant - " + teacher.getFullName());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 800);
@@ -120,6 +126,7 @@ public class EnseignantDashboard extends JFrame {
 
     /**
      * Creates the teacher's profile panel.
+     * 
      * @return The profile panel.
      */
     private JPanel createProfilePanel() {
@@ -196,9 +203,9 @@ public class EnseignantDashboard extends JFrame {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         // Créer les composants principaux de l'interface
-        JPanel headerPanel = createHeaderPanel();    // En-tête (haut)
-        JPanel sidebarPanel = createSidebarPanel();  // Barre latérale (gauche)
-        contentPanel = createContentPanel();         // Contenu principal (centre)
+        JPanel headerPanel = createHeaderPanel(); // En-tête (haut)
+        JPanel sidebarPanel = createSidebarPanel(); // Barre latérale (gauche)
+        contentPanel = createContentPanel(); // Contenu principal (centre)
 
         // Assemblage des composants dans le panel principal
         mainPanel.add(headerPanel, BorderLayout.NORTH);
@@ -211,6 +218,7 @@ public class EnseignantDashboard extends JFrame {
     /**
      * Crée l'en-tête du tableau de bord avec un dégradé de couleur,
      * le nom de l'enseignant et des boutons de notifications
+     * 
      * @return Le panel d'en-tête configuré
      */
     private JPanel createHeaderPanel() {
@@ -225,8 +233,7 @@ public class EnseignantDashboard extends JFrame {
                 // Dégradé de fond vert EMSI
                 GradientPaint gradient = new GradientPaint(
                         0, 0, EMSI_GREEN,
-                        getWidth(), 0, EMSI_DARK_GREEN
-                );
+                        getWidth(), 0, EMSI_DARK_GREEN);
                 g2d.setPaint(gradient);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
 
@@ -245,7 +252,8 @@ public class EnseignantDashboard extends JFrame {
         welcomeLabel.setFont(TITLE_FONT);
         welcomeLabel.setForeground(Color.WHITE);
 
-        JLabel detailsLabel = new JLabel("Département: " + teacher.getDepartement() + " | Spécialité: " + teacher.getSpecialite());
+        JLabel detailsLabel = new JLabel(
+                "Département: " + teacher.getDepartement() + " | Spécialité: " + teacher.getSpecialite());
         detailsLabel.setFont(SUBTITLE_FONT);
         detailsLabel.setForeground(new Color(255, 255, 255, 220));
 
@@ -275,6 +283,7 @@ public class EnseignantDashboard extends JFrame {
 
     /**
      * Crée un bouton d'icône avec un effet de survol pour l'en-tête
+     * 
      * @param unicode Caractère Unicode représentant l'icône
      * @param tooltip Texte d'info-bulle
      * @return Le bouton configuré
@@ -340,6 +349,7 @@ public class EnseignantDashboard extends JFrame {
 
     /**
      * Crée la barre latérale avec le menu de navigation
+     * 
      * @return Le panel de barre latérale configuré
      */
     private JPanel createSidebarPanel() {
@@ -380,7 +390,8 @@ public class EnseignantDashboard extends JFrame {
         backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         backButton.addActionListener(e -> {
             dispose(); // Fermer le tableau de bord actuel
-            SwingUtilities.invokeLater(() -> new EnseignantLogin().setVisible(true)); // Ouvrir l'écran de connexion enseignant
+            SwingUtilities.invokeLater(() -> new EnseignantLogin().setVisible(true)); // Ouvrir l'écran de connexion
+                                                                                      // enseignant
         });
 
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -400,12 +411,12 @@ public class EnseignantDashboard extends JFrame {
 
         // Menu items avec icônes Unicode
         String[][] menuItems = {
-            {"\uD83C\uDFE0", "Tableau de bord"},
-            {"\uD83D\uDCDA", "Mes classes"},
-            {"\uD83D\uDCCB", "Gestion des notes"},
-            {"\uD83D\uDCC5", "Planning"},
-            {"\uD83D\uDCE8", "Messages"},
-            {"\uD83D\uDC64", "Profil"}
+                { "\uD83C\uDFE0", "Tableau de bord" },
+                { "\uD83D\uDCDA", "Mes classes" },
+                { "\uD83D\uDCCB", "Gestion des notes" },
+                { "\uD83D\uDCC5", "Planning" },
+                { "\uD83D\uDCE8", "Messages" },
+                { "\uD83D\uDC64", "Profil" }
         };
 
         for (String[] item : menuItems) {
@@ -476,6 +487,7 @@ public class EnseignantDashboard extends JFrame {
 
     /**
      * Gère les actions du menu de navigation
+     * 
      * @param option Texte de l'option de menu sélectionnée
      */
     private void handleMenuAction(String option) {
@@ -504,8 +516,8 @@ public class EnseignantDashboard extends JFrame {
                 break;
             default:
                 JOptionPane.showMessageDialog(this,
-                    "Fonctionnalité '" + option + "' en cours de développement.",
-                    "Info", JOptionPane.INFORMATION_MESSAGE);
+                        "Fonctionnalité '" + option + "' en cours de développement.",
+                        "Info", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -523,10 +535,265 @@ public class EnseignantDashboard extends JFrame {
         contentPanel.repaint();
     }
 
-    private Component createGradesPanel() {
-        // TODO: Implement grades panel
-        return new JPanel(); // Placeholder return
+private JPanel createGradesPanel() {
+    System.out.println("DEBUG: createGradesPanel() appelé");
+    JPanel panel = new JPanel(new BorderLayout());
+    panel.setBackground(BACKGROUND_WHITE);
+    panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+    // Ajoute des logs pour vérifier les étapes
+    System.out.println("DEBUG: Initialisation des composants du panel de gestion des notes");
+
+    // Sélecteur de classe
+    JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+    topPanel.setOpaque(false);
+    JLabel classLabel = new JLabel("Classe : ");
+    classLabel.setFont(SUBTITLE_FONT);
+
+TeacherService teacherService = new TeacherService();
+List<TeacherService.Classe> classes = teacherService.getClassesByTeacherId(currentTeacherId);
+
+JComboBox<String> classCombo = new JComboBox<>();
+for (TeacherService.Classe classe : classes) {
+    classCombo.addItem(classe.getNom()); // Assure-toi que `getNom()` retourne le nom de la classe
+}
+
+    topPanel.add(classLabel);
+    topPanel.add(classCombo);
+
+       panel.add(topPanel, BorderLayout.NORTH);
+
+    // Ajoute des logs pour vérifier les combobox
+    System.out.println("DEBUG: Combobox de classe initialisé avec " + classCombo.getItemCount() + " éléments");
+
+    
+    // Sélecteur de matière
+    JLabel courseLabel = new JLabel("Matière : ");
+    courseLabel.setFont(SUBTITLE_FONT);
+
+        // Tableau des notes
+    String[] columns = {"ID_etudiant","Nom", "Prénom", "Contrôle Continu", "Examen", "TP", "Note Finale", "Validation" };
+    DefaultTableModel model = new DefaultTableModel(columns, 0) {
+        @Override
+        public boolean isCellEditable(int row, int col) {
+            return col >= 3 && col <= 7; // Seules les notes sont éditables
+        }
+    };
+    // Ajoute un écouteur pour recalculer la note finale et la mention
+model.addTableModelListener(e -> {
+    int row = e.getFirstRow(); // Ligne modifiée
+    int column = e.getColumn(); // Colonne modifiée
+
+    // Vérifie si la modification concerne les colonnes des notes
+    if (column >= 3 && column <= 5) { // Colonnes Contrôle Continu, Examen, TP
+        try {
+            // Récupère les valeurs des colonnes
+            double controleContinu = Double.parseDouble(model.getValueAt(row, 3).toString());
+            double examen = Double.parseDouble(model.getValueAt(row, 4).toString());
+            double tp = Double.parseDouble(model.getValueAt(row, 5).toString());
+
+            // Calcule la note finale
+            double noteFinale = (controleContinu + examen + tp) / 3;
+
+            // Détermine la mention
+            String validation = noteFinale >= 10 ? "Validée" : "Non validée";
+
+            // Met à jour les colonnes Note Finale et Validation
+            model.setValueAt(noteFinale, row, 6); // Colonne Note Finale
+            model.setValueAt(validation, row, 7); // Colonne Validation
+        } catch (NumberFormatException ex) {
+            // Gestion des erreurs si les valeurs ne sont pas valides
+            JOptionPane.showMessageDialog(panel, "Veuillez entrer des valeurs numériques valides.", "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
     }
+});
+
+    JComboBox<String> courseCombo = new JComboBox<>();
+    CoursService coursService = new CoursService();
+    List<String> matieres = coursService.getMatieresByTeacherId(currentTeacherId);
+    for (String matiere : matieres) {
+        courseCombo.addItem(matiere);
+    }
+    
+
+    // Ajoute un ActionListener pour mettre à jour currentCoursId
+courseCombo.addActionListener(e -> {
+    String selectedIntitule = (String) courseCombo.getSelectedItem();
+    if (selectedIntitule != null) {
+        currentCoursId = coursService.getCoursIdByIntitule(selectedIntitule); // Récupère l'ID du cours
+        System.out.println("DEBUG: currentCoursId mis à jour : " + currentCoursId);
+
+        // Charger les notes des étudiants
+        String selectedClass = (String) classCombo.getSelectedItem();
+        if (selectedClass != null) {
+            NoteService noteService = new NoteService();
+            List<Note> notes = noteService.getNotesByClassAndCourse(selectedClass, currentCoursId);
+
+            model.setRowCount(0); // Réinitialise le tableau
+            for (Note note : notes) {
+                model.addRow(new Object[] {
+                    note.getEtudiantId(),
+                    note.getNomEtudiant(), // Remplace par le nom réel si nécessaire
+                    note.getPrenomEtudiant(), // Remplace par le prénom réel si nécessaire
+                    note.getControleContinu(),
+                    note.getExamen(),
+                    note.getTp(),
+                    note.getNoteFinale(),
+                    note.getValidation()
+                });
+            }
+            System.out.println("DEBUG: Tableau des notes mis à jour avec " + model.getRowCount() + " lignes.");
+        }
+    }
+});
+topPanel.add(Box.createHorizontalStrut(20));
+topPanel.add(courseLabel);
+topPanel.add(courseCombo);
+
+    panel.add(topPanel, BorderLayout.NORTH);
+
+    // Ajoute des logs pour vérifier les combobox
+    System.out.println("DEBUG: Combobox de matière initialisé avec " + courseCombo.getItemCount() + " éléments");
+
+
+    JTable table = new JTable(model);
+    table.setRowHeight(30);
+
+    JScrollPane scrollPane = new JScrollPane(table);
+    panel.add(scrollPane, BorderLayout.CENTER);
+
+    // Ajoute des logs pour vérifier le tableau
+    System.out.println("DEBUG: Tableau des notes initialisé");
+
+    // Bouton pour charger les élèves
+String selectedClass = (String) classCombo.getSelectedItem();
+String selectedCourse = (String) courseCombo.getSelectedItem();
+if (selectedClass != null && selectedCourse != null) {
+    NoteService noteService = new NoteService();
+    List<Note> notes = noteService.getNotesByClassAndCourse(selectedClass, currentCoursId);
+
+    model.setRowCount(0); // Réinitialise le tableau
+    for (Note note : notes) {
+        model.addRow(new Object[] {
+            note.getEtudiantId(),
+            "Nom Étudiant", // Remplace par le nom réel si nécessaire
+            "Prénom Étudiant", // Remplace par le prénom réel si nécessaire
+            note.getControleContinu(),
+            note.getExamen(),
+            note.getTp(),
+            note.getNoteFinale(),
+            note.getValidation()
+        });
+    }
+    System.out.println("DEBUG: Tableau des notes mis à jour avec " + model.getRowCount() + " lignes.");
+}
+        // Bouton pour enregistrer les notes
+    JButton saveButton = new JButton("Enregistrer les notes");
+saveButton.addActionListener(e -> {
+    List<Note> notes = new ArrayList<>();
+    for (int i = 0; i < model.getRowCount(); i++) {
+        Note note = new Note();
+        note.setEtudiantId((Integer) model.getValueAt(i, 0)); // ID de l'étudiant
+        note.setCoursId(currentCoursId); // ID du cours
+        note.setControleContinu(Double.parseDouble(model.getValueAt(i, 3).toString()));
+        note.setExamen(Double.parseDouble(model.getValueAt(i, 4).toString()));
+        note.setTp(Double.parseDouble(model.getValueAt(i, 5).toString()));
+        double noteFinale = (note.getControleContinu() + note.getExamen() + note.getTp()) / 3;
+        note.setNoteFinale(noteFinale);
+        note.setValidation(noteFinale >= 10 ? "Validée" : "Non validée");
+        notes.add(note);
+    }
+
+    NoteService noteService = new NoteService();
+    for (Note note : notes) {
+        boolean success = noteService.saveOrUpdateNote(note);
+        if (!success) {
+            JOptionPane.showMessageDialog(panel, "Erreur lors de l'enregistrement des notes.", "Erreur", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+    }
+    JOptionPane.showMessageDialog(panel, "Notes enregistrées avec succès.", "Succès", JOptionPane.INFORMATION_MESSAGE);
+});
+
+JButton addStudentButton = new JButton("Ajouter un étudiant");
+addStudentButton.addActionListener(e -> {
+    // Ouvrir une boîte de dialogue pour ajouter un étudiant
+    JTextField studentIdField = new JTextField();
+    JTextField studentNameField = new JTextField();
+    JTextField studentSurnameField = new JTextField();
+    JTextField controleContinuField = new JTextField();
+    JTextField examenField = new JTextField();
+    JTextField tpField = new JTextField();
+
+    JPanel dialogPanel = new JPanel(new GridLayout(0, 2));
+    dialogPanel.add(new JLabel("ID Étudiant :"));
+    dialogPanel.add(studentIdField);
+    dialogPanel.add(new JLabel("Nom :"));
+    dialogPanel.add(studentNameField);
+    dialogPanel.add(new JLabel("Prénom :"));
+    dialogPanel.add(studentSurnameField);
+    dialogPanel.add(new JLabel("Contrôle Continu :"));
+    dialogPanel.add(controleContinuField);
+    dialogPanel.add(new JLabel("Examen :"));
+    dialogPanel.add(examenField);
+    dialogPanel.add(new JLabel("TP :"));
+    dialogPanel.add(tpField);
+
+    int result = JOptionPane.showConfirmDialog(null, dialogPanel, "Ajouter un étudiant", JOptionPane.OK_CANCEL_OPTION);
+    if (result == JOptionPane.OK_OPTION) {
+        try {
+            int studentId = Integer.parseInt(studentIdField.getText());
+            String studentName = studentNameField.getText();
+            String studentSurname = studentSurnameField.getText();
+            double controleContinu = Double.parseDouble(controleContinuField.getText());
+            double examen = Double.parseDouble(examenField.getText());
+            double tp = Double.parseDouble(tpField.getText());
+            double noteFinale = (controleContinu + examen + tp) / 3;
+            String validation = noteFinale >= 10 ? "Validée" : "Non validée";
+
+            // Ajouter l'étudiant au tableau
+            model.addRow(new Object[] {
+                studentId,
+                studentName,
+                studentSurname,
+                controleContinu,
+                examen,
+                tp,
+                noteFinale,
+                validation
+            });
+
+            // Ajouter l'étudiant dans la base de données
+            NoteService noteService = new NoteService();
+            Note note = new Note();
+            note.setEtudiantId(studentId);
+            note.setCoursId(currentCoursId);
+            note.setControleContinu(controleContinu);
+            note.setExamen(examen);
+            note.setTp(tp);
+            note.setNoteFinale(noteFinale);
+            note.setValidation(validation);
+
+            boolean success = noteService.saveOrUpdateNote(note);
+            if (!success) {
+                JOptionPane.showMessageDialog(panel, "Erreur lors de l'ajout de l'étudiant.", "Erreur", JOptionPane.ERROR_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(panel, "Étudiant ajouté avec succès.", "Succès", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(panel, "Veuillez entrer des valeurs valides.", "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+});
+
+JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+buttonPanel.add(saveButton);
+buttonPanel.add(addStudentButton);
+
+panel.add(buttonPanel, BorderLayout.SOUTH);
+
+return panel;
+}
 
     private void showClassesPanel() {
         contentPanel.removeAll();
@@ -577,6 +844,7 @@ public class EnseignantDashboard extends JFrame {
 
     /**
      * Creates a visually aesthetic panel for a single class item.
+     * 
      * @param classe The Classe object to display.
      * @return A JPanel representing the class item.
      */
@@ -643,7 +911,7 @@ public class EnseignantDashboard extends JFrame {
         panel.add(titleLabel, BorderLayout.NORTH);
 
         // Table to display student data
-        String[] columns = {"Photo", "Matricule", "Nom", "Prénom", "Email", "Filière", "Promotion"};
+        String[] columns = { "Photo", "Matricule", "Nom", "Prénom", "Email", "Filière", "Promotion" };
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public Class<?> getColumnClass(int column) {
@@ -654,9 +922,9 @@ public class EnseignantDashboard extends JFrame {
             }
 
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // Students table is not directly editable
-            }
+    public boolean isCellEditable(int row, int col) {
+        return col >= 3 && col <= 7; // Seules les colonnes de notes sont éditables
+    }
         };
 
         JTable studentsTable = new JTable(model);
@@ -666,10 +934,12 @@ public class EnseignantDashboard extends JFrame {
         // Set custom renderer for the Photo column
         studentsTable.getColumnModel().getColumn(0).setCellRenderer(new ImageRenderer());
 
-        // Set custom renderer for text columns with padding, alignment, and alternating colors
-        DefaultTableCellRenderer textRenderer = new DefaultTableCellRenderer(){
+        // Set custom renderer for text columns with padding, alignment, and alternating
+        // colors
+        DefaultTableCellRenderer textRenderer = new DefaultTableCellRenderer() {
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 // Apply border for padding
                 ((JComponent) c).setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
@@ -680,7 +950,8 @@ public class EnseignantDashboard extends JFrame {
 
                 // Alternating row colors
                 if (!isSelected) {
-                    c.setBackground(row % 2 == 0 ? BACKGROUND_WHITE : EMSI_LIGHT_GRAY); // Alternate white and light gray
+                    c.setBackground(row % 2 == 0 ? BACKGROUND_WHITE : EMSI_LIGHT_GRAY); // Alternate white and light
+                                                                                        // gray
                     c.setForeground(Color.BLACK); // Default text color
                 } else {
                     // Selection colors
@@ -737,13 +1008,13 @@ public class EnseignantDashboard extends JFrame {
             }
 
             Object[] row = {
-                studentPhoto, // Photo
-                student.getMatricule(),
-                student.getNom(),
-                student.getPrenom(),
-                student.getEmail(),
-                student.getFiliere(),
-                student.getPromotion()
+                    studentPhoto, // Photo
+                    student.getMatricule(),
+                    student.getNom(),
+                    student.getPrenom(),
+                    student.getEmail(),
+                    student.getFiliere(),
+                    student.getPromotion()
             };
             model.addRow(row);
         }
@@ -755,7 +1026,8 @@ public class EnseignantDashboard extends JFrame {
     private class ImageRenderer extends DefaultTableCellRenderer {
         JLabel lbl = new JLabel();
 
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
+                int row, int column) {
             lbl.setText(null);
             lbl.setIcon((ImageIcon) value);
             // Center the image within the cell
@@ -774,14 +1046,16 @@ public class EnseignantDashboard extends JFrame {
             setBackground(EMSI_DARK_GREEN); // EMSI dark green background
             setForeground(Color.WHITE); // White text
             setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createMatteBorder(0, 0, 2, 1, Color.WHITE), // White bottom and right border for separation
+                    BorderFactory.createMatteBorder(0, 0, 2, 1, Color.WHITE), // White bottom and right border for
+                                                                              // separation
                     BorderFactory.createEmptyBorder(8, 10, 8, 10) // Padding
             ));
             setOpaque(true); // Important pour que le fond coloré s'affiche
         }
 
         @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
+                int row, int column) {
             // Utiliser le rendu par défaut de la superclasse pour obtenir le composant
             // et afficher le texte de l'en-tête (value)
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -795,8 +1069,9 @@ public class EnseignantDashboard extends JFrame {
                 label.setFont(new Font("Segoe UI", Font.BOLD, 14));
                 label.setBackground(EMSI_DARK_GREEN);
                 label.setForeground(Color.WHITE);
-                 label.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createMatteBorder(0, 0, 2, 1, Color.WHITE), // White bottom and right border for separation
+                label.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(0, 0, 2, 1, Color.WHITE), // White bottom and right border for
+                                                                                  // separation
                         BorderFactory.createEmptyBorder(8, 10, 8, 10) // Padding
                 ));
                 label.setOpaque(true); // S'assurer qu'il est opaque
@@ -805,10 +1080,10 @@ public class EnseignantDashboard extends JFrame {
                 label.validate();
                 label.repaint();
 
-                 return label;
+                return label;
             } else {
                 // Fallback pour les composants qui ne sont pas des JLabel
-                 ((JComponent) c).setBorder(getBorder());
+                ((JComponent) c).setBorder(getBorder());
                 c.setBackground(getBackground());
                 c.setForeground(getForeground());
                 c.setFont(getFont());
@@ -839,8 +1114,8 @@ public class EnseignantDashboard extends JFrame {
         titleLabel.setForeground(EMSI_GRAY);
 
         // Sélecteur de semaine
-        JComboBox<String> weekSelector = new JComboBox<>(new String[]{
-            "Semaine 1", "Semaine 2", "Semaine 3", "Semaine 4"
+        JComboBox<String> weekSelector = new JComboBox<>(new String[] {
+                "Semaine 1", "Semaine 2", "Semaine 3", "Semaine 4"
         });
         weekSelector.setPreferredSize(new Dimension(150, 35));
         weekSelector.setFont(SUBTITLE_FONT);
@@ -853,9 +1128,10 @@ public class EnseignantDashboard extends JFrame {
         scheduleGrid.setBackground(EMSI_GREEN); // Use EMSI green for grid lines
 
         // En-têtes des colonnes (jours)
-        String[] days = {"", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"};
+        String[] days = { "", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi" };
         // Adjusted hours array to include all unique time slots from the data
-        String[] hours = {"08:30-10:30", "10:00-12:00", "10:45-12:45", "14:00-16:00", "16:15-18:15", "18:30-20:30", "08:30-11:30"};
+        String[] hours = { "08:30-10:30", "10:00-12:00", "10:45-12:45", "14:00-16:00", "16:15-18:15", "18:30-20:30",
+                "08:30-11:30" };
 
         // Map to store timetable entries by day and hour
         Map<String, Map<String, Emploi_de_temps>> timetableMap = new HashMap<>();
@@ -881,7 +1157,8 @@ public class EnseignantDashboard extends JFrame {
             String frenchDay = englishToFrenchDays.get(englishDay);
 
             System.out.println("DEBUG: Processing entry: " + entry); // Added logging
-            System.out.println("DEBUG: Mapped English day " + englishDay + " to French day " + frenchDay); // Added logging
+            System.out.println("DEBUG: Mapped English day " + englishDay + " to French day " + frenchDay); // Added
+                                                                                                           // logging
 
             if (frenchDay != null) {
                 String startTime = entry.getHeureDebut().substring(0, 5);
@@ -891,7 +1168,9 @@ public class EnseignantDashboard extends JFrame {
                 System.out.println("DEBUG: Processing time slot: " + timeSlot); // Added logging
 
                 timetableMap.computeIfAbsent(frenchDay, k -> new HashMap<>()).put(timeSlot, entry);
-                System.out.println("DEBUG: Added entry to timetableMap for day " + frenchDay + " and time slot " + timeSlot); // Added logging
+                System.out.println(
+                        "DEBUG: Added entry to timetableMap for day " + frenchDay + " and time slot " + timeSlot); // Added
+                                                                                                                   // logging
             } else {
                 System.out.println("DEBUG: No French mapping found for English day: " + englishDay); // Added logging
             }
@@ -907,24 +1186,32 @@ public class EnseignantDashboard extends JFrame {
                 String currentDay = days[j]; // Get French day from grid header
 
                 if (i > 0 && j > 0) { // Only process cells within the timetable grid area (not headers)
-                    String currentTimeSlot = hours[i-1]; // Get time slot from hours array using row index
-                    System.out.println("DEBUG: Checking timetableMap for day " + currentDay + " and time slot " + currentTimeSlot); // Added logging
-                    if (timetableMap.containsKey(currentDay) && timetableMap.get(currentDay).containsKey(currentTimeSlot)) {
-                        System.out.println("DEBUG: Timetable entry found for day " + currentDay + " and time slot " + currentTimeSlot); // Added logging
+                    String currentTimeSlot = hours[i - 1]; // Get time slot from hours array using row index
+                    System.out.println(
+                            "DEBUG: Checking timetableMap for day " + currentDay + " and time slot " + currentTimeSlot); // Added
+                                                                                                                         // logging
+                    if (timetableMap.containsKey(currentDay)
+                            && timetableMap.get(currentDay).containsKey(currentTimeSlot)) {
+                        System.out.println("DEBUG: Timetable entry found for day " + currentDay + " and time slot "
+                                + currentTimeSlot); // Added logging
                         Emploi_de_temps courseEntry = timetableMap.get(currentDay).get(currentTimeSlot);
 
-                        System.out.println("DEBUG: Calling getJPanel for course entry: " + courseEntry); // Added logging
+                        System.out.println("DEBUG: Calling getJPanel for course entry: " + courseEntry); // Added
+                                                                                                         // logging
                         JPanel courseDetailsPanel = getJPanel(courseEntry);
 
                         if (courseDetailsPanel != null) { // Check if panel is not null
                             cell.setBackground(EMSI_LIGHT_GRAY); // Highlight cells with courses
                             cell.add(courseDetailsPanel, BorderLayout.CENTER);
-                            System.out.println("DEBUG: Added courseDetailsPanel to cell for " + currentDay + " " + currentTimeSlot); // Added logging
+                            System.out.println("DEBUG: Added courseDetailsPanel to cell for " + currentDay + " "
+                                    + currentTimeSlot); // Added logging
                         } else {
-                             System.out.println("DEBUG: getJPanel returned null for entry: " + courseEntry); // Added logging
+                            System.out.println("DEBUG: getJPanel returned null for entry: " + courseEntry); // Added
+                                                                                                            // logging
                         }
                     } else {
-                        System.out.println("DEBUG: No timetable entry found for day " + currentDay + " and time slot " + currentTimeSlot); // Added logging
+                        System.out.println("DEBUG: No timetable entry found for day " + currentDay + " and time slot "
+                                + currentTimeSlot); // Added logging
                     }
                 }
 
@@ -939,7 +1226,7 @@ public class EnseignantDashboard extends JFrame {
                     cell.add(dayLabel, BorderLayout.CENTER);
                 } else if (j == 0) {
                     // En-têtes des heures
-                    JLabel hourLabel = new JLabel(hours[i-1], SwingConstants.CENTER);
+                    JLabel hourLabel = new JLabel(hours[i - 1], SwingConstants.CENTER);
                     hourLabel.setFont(HEADING_FONT);
                     hourLabel.setForeground(Color.WHITE); // White text for headers
                     hourLabel.setBackground(EMSI_GREEN); // Green background for headers
@@ -1103,10 +1390,13 @@ public class EnseignantDashboard extends JFrame {
         messagesPanel.setBackground(Color.WHITE);
 
         // Messages d'exemple
-        addMessage(messagesPanel, "Bonjour professeur, j'ai une question concernant le TP de la semaine dernière.", false);
+        addMessage(messagesPanel, "Bonjour professeur, j'ai une question concernant le TP de la semaine dernière.",
+                false);
         addMessage(messagesPanel, "Bonjour Mohammed, je vous écoute.", true);
         addMessage(messagesPanel, "Je n'ai pas compris la partie sur les collections en Java.", false);
-        addMessage(messagesPanel, "Je peux vous expliquer cela en détail. Les collections en Java sont des structures de données qui permettent de stocker et manipuler des groupes d'objets.", true);
+        addMessage(messagesPanel,
+                "Je peux vous expliquer cela en détail. Les collections en Java sont des structures de données qui permettent de stocker et manipuler des groupes d'objets.",
+                true);
 
         JScrollPane messagesScrollPane = new JScrollPane(messagesPanel);
         messagesScrollPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
@@ -1189,14 +1479,14 @@ public class EnseignantDashboard extends JFrame {
         JPanel coursePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         coursePanel.setBackground(Color.WHITE);
         JComboBox<String> courseSelector = new JComboBox<>();
-        
+
         // Remplir le sélecteur de cours
         CoursService coursService = new CoursService();
-        List<cours> coursList = coursService.getCoursByEnseignant(currentCoursId);
+        List<com.emsi.gestionuniv.model.academic.cours> coursList = coursService.getCoursByEnseignant(currentTeacherId);
         for (cours c : coursList) {
             courseSelector.addItem(c.getCode() + " - " + c.getTitre());
         }
-        
+
         coursePanel.add(new JLabel("Sélectionner un cours : "));
         coursePanel.add(courseSelector);
         header.add(coursePanel, BorderLayout.EAST);
@@ -1208,7 +1498,7 @@ public class EnseignantDashboard extends JFrame {
         tablePanel.setBackground(Color.WHITE);
         tablePanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
 
-        String[] columns = {"Matricule", "Nom", "Prénom", "Date", "Justifiée", "Justification", "Actions"};
+        String[] columns = { "Matricule", "Nom", "Prénom", "Date", "Justifiée", "Justification", "Actions" };
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -1227,13 +1517,13 @@ public class EnseignantDashboard extends JFrame {
         List<Abscence> absences = absenceService.getAbsencesByCours(currentCoursId);
         for (Abscence absence : absences) {
             Object[] row = {
-                absence.getEtudiant().getMatricule(),
-                absence.getEtudiant().getNom(),
-                absence.getEtudiant().getPrenom(),
-                absence.getDate(),
-                absence.isJustifiee(),
-                absence.getJustification(),
-                "Modifier"
+                    absence.getEtudiant().getMatricule(),
+                    absence.getEtudiant().getNom(),
+                    absence.getEtudiant().getPrenom(),
+                    absence.getDate(),
+                    absence.isJustifiee(),
+                    absence.getJustification(),
+                    "Modifier"
             };
             model.addRow(row);
         }
@@ -1267,7 +1557,7 @@ public class EnseignantDashboard extends JFrame {
         JLabel justifiedLabel = new JLabel("Absences justifiées : " + stats[1]);
         JLabel unjustifiedLabel = new JLabel("Absences non justifiées : " + stats[2]);
 
-        for (JLabel label : new JLabel[]{totalLabel, justifiedLabel, unjustifiedLabel}) {
+        for (JLabel label : new JLabel[] { totalLabel, justifiedLabel, unjustifiedLabel }) {
             label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             statsPanel.add(label);
         }
@@ -1283,7 +1573,7 @@ public class EnseignantDashboard extends JFrame {
         JButton addButton = new JButton("Ajouter une absence");
         JButton exportButton = new JButton("Exporter le rapport");
 
-        for (JButton button : new JButton[]{addButton, exportButton}) {
+        for (JButton button : new JButton[] { addButton, exportButton }) {
             button.setBackground(new Color(0, 102, 0));
             button.setForeground(Color.WHITE);
             button.setFocusPainted(false);
@@ -1318,10 +1608,10 @@ public class EnseignantDashboard extends JFrame {
         titleLabel.setForeground(EMSI_GRAY);
 
         // Sélecteur de période
-        JComboBox<String> periodSelector = new JComboBox<>(new String[]{
-            "Semestre 1",
-            "Semestre 2",
-            "Année complète"
+        JComboBox<String> periodSelector = new JComboBox<>(new String[] {
+                "Semestre 1",
+                "Semestre 2",
+                "Année complète"
         });
         periodSelector.setPreferredSize(new Dimension(200, 35));
         periodSelector.setFont(SUBTITLE_FONT);
@@ -1350,14 +1640,14 @@ public class EnseignantDashboard extends JFrame {
         rightColumn.setOpaque(false);
 
         // Graphique de distribution des notes
-        JPanel gradesChart = createChartPanel("Distribution des notes", new String[]{
-            "0-5", "5-10", "10-15", "15-20"
-        }, new int[]{5, 15, 45, 35});
+        JPanel gradesChart = createChartPanel("Distribution des notes", new String[] {
+                "0-5", "5-10", "10-15", "15-20"
+        }, new int[] { 5, 15, 45, 35 });
 
         // Graphique de taux de présence
-        JPanel attendanceChart = createChartPanel("Taux de présence", new String[]{
-            "Présent", "Absent justifié", "Absent non justifié"
-        }, new int[]{85, 10, 5});
+        JPanel attendanceChart = createChartPanel("Taux de présence", new String[] {
+                "Présent", "Absent justifié", "Absent non justifié"
+        }, new int[] { 85, 10, 5 });
 
         rightColumn.add(gradesChart);
         rightColumn.add(attendanceChart);
@@ -1425,7 +1715,7 @@ public class EnseignantDashboard extends JFrame {
                 // Légère ombre
                 for (int i = 0; i < 4; i++) {
                     g2d.setColor(new Color(0, 0, 0, 2 + i));
-                    g2d.drawRoundRect(i, i, getWidth() - 2*i - 1, getHeight() - 2*i - 1, 12, 12);
+                    g2d.drawRoundRect(i, i, getWidth() - 2 * i - 1, getHeight() - 2 * i - 1, 12, 12);
                 }
 
                 // Titre
@@ -1465,6 +1755,7 @@ public class EnseignantDashboard extends JFrame {
 
     /**
      * Crée le panel principal de contenu du tableau de bord
+     * 
      * @return Le panel de contenu configuré
      */
     private JPanel createContentPanel() {
@@ -1483,8 +1774,7 @@ public class EnseignantDashboard extends JFrame {
                 setOpaque(false);
                 setBorder(new CompoundBorder(
                         BorderFactory.createLineBorder(new Color(200, 200, 200)),
-                        BorderFactory.createEmptyBorder(6, 10, 6, 10)
-                ));
+                        BorderFactory.createEmptyBorder(6, 10, 6, 10)));
             }
 
             @Override
@@ -1560,9 +1850,10 @@ public class EnseignantDashboard extends JFrame {
 
     /**
      * Crée une carte de statistique avec un style moderne
+     * 
      * @param title Titre de la statistique
      * @param value Valeur numérique à afficher
-     * @param icon Icône Unicode
+     * @param icon  Icône Unicode
      * @return Panel de la carte configurée
      */
     private JPanel createModernStatPanel(String title, String value, String icon) {
@@ -1581,7 +1872,7 @@ public class EnseignantDashboard extends JFrame {
                 // Effet d'ombre légère
                 for (int i = 0; i < 4; i++) {
                     g2d.setColor(new Color(0, 0, 0, 2 + i));
-                    g2d.drawRoundRect(i, i, getWidth() - 2*i - 1, getHeight() - 2*i - 1, 12, 12);
+                    g2d.drawRoundRect(i, i, getWidth() - 2 * i - 1, getHeight() - 2 * i - 1, 12, 12);
                 }
 
                 g2d.dispose();
@@ -1622,210 +1913,38 @@ public class EnseignantDashboard extends JFrame {
 
     /**
      * Crée le panneau des dernières activités
+     * 
      * @return Panel configuré
      */
     private JPanel createActivitiesPanel() {
-        // Panel avec coins arrondis et ombre
-        JPanel panel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    JPanel panel = new JPanel(new BorderLayout());
+    panel.setBackground(Color.WHITE);
+    panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-                // Fond blanc arrondi
-                g2d.setColor(Color.WHITE);
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+    JLabel title = new JLabel("Dernières activités");
+    title.setFont(HEADING_FONT);
+    title.setForeground(EMSI_GRAY);
 
-                // Légère ombre
-                for (int i = 0; i < 4; i++) {
-                    g2d.setColor(new Color(0, 0, 0, 2 + i));
-                    g2d.drawRoundRect(i, i, getWidth() - 2*i - 1, getHeight() - 2*i - 1, 12, 12);
-                }
+    JTextArea activities = new JTextArea("Aucune activité récente.");
+    activities.setEditable(false);
+    activities.setBackground(Color.WHITE);
+    activities.setFont(SUBTITLE_FONT);
 
-                g2d.dispose();
-            }
-        };
+    panel.add(title, BorderLayout.NORTH);
+    panel.add(activities, BorderLayout.CENTER);
 
-        panel.setLayout(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        panel.setOpaque(false);
-        panel.setPreferredSize(new Dimension(0, 300));
-
-        // Titre du panneau
-        JLabel titleLabel = new JLabel("Dernières activités");
-        titleLabel.setFont(STAT_TITLE_FONT);
-        titleLabel.setForeground(EMSI_GRAY);
-
-        // Liste verticale des activités
-        JPanel activitiesList = new JPanel();
-        activitiesList.setLayout(new BoxLayout(activitiesList, BoxLayout.Y_AXIS));
-        activitiesList.setOpaque(false);
-
-        // Données d'exemple pour les activités
-        String[][] activities = {
-                {"Aujourd'hui", "Notes du module Java mises à jour"},
-                {"Aujourd'hui", "Nouveau message de l'administration"},
-                {"Hier", "Planning du semestre ajouté"},
-                {"29/04/2025", "Réunion département planifiée"}
-        };
-
-        // Création des éléments d'activité
-        for (String[] activity : activities) {
-            activitiesList.add(createActivityItem(activity[0], activity[1]));
-            activitiesList.add(Box.createRigidArea(new Dimension(0, 10))); // Espacement vertical
-        }
-
-        panel.add(titleLabel, BorderLayout.NORTH);
-        panel.add(activitiesList, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    /**
-     * Crée un élément d'activité pour la liste des activités récentes
-     * @param date Date de l'activité
-     * @param description Description de l'activité
-     * @return Panel configuré pour l'activité
-     */
-    private JPanel createActivityItem(String date, String description) {
-        JPanel panel = new JPanel(new BorderLayout(15, 0));
-        panel.setOpaque(false);
-        panel.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
-
-        // Étiquette de date (à gauche)
-        JLabel dateLabel = new JLabel(date);
-        dateLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        dateLabel.setForeground(EMSI_GREEN);
-        dateLabel.setPreferredSize(new Dimension(80, 20));
-
-        // Description de l'activité (au centre)
-        JLabel descLabel = new JLabel(description);
-        descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-
-        panel.add(dateLabel, BorderLayout.WEST);
-        panel.add(descLabel, BorderLayout.CENTER);
-
-        // Séparateur horizontal sous chaque activité
-        JSeparator separator = new JSeparator();
-        separator.setForeground(new Color(230, 230, 230));
-        panel.add(separator, BorderLayout.SOUTH);
-
-        return panel;
-    }
-
-    /**
-     * Crée le panneau du planning de la semaine
-     * @return Panel configuré
-     */
-    private JPanel createCalendarPanel() {
-        // Panel avec coins arrondis et ombre
-        JPanel panel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // Fond blanc arrondi
-                g2d.setColor(Color.WHITE);
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-
-                // Légère ombre
-                for (int i = 0; i < 4; i++) {
-                    g2d.setColor(new Color(0, 0, 0, 2 + i));
-                    g2d.drawRoundRect(i, i, getWidth() - 2*i - 1, getHeight() - 2*i - 1, 12, 12);
-                }
-
-                g2d.dispose();
-            }
-        };
-
-        panel.setLayout(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        panel.setOpaque(false);
-        panel.setPreferredSize(new Dimension(0, 300));
-
-        // Titre du panneau
-        JLabel titleLabel = new JLabel("Planning de la semaine");
-        titleLabel.setFont(STAT_TITLE_FONT);
-        titleLabel.setForeground(EMSI_GRAY);
-
-        // Contenu du planning
-        JPanel planningContent = new JPanel();
-        planningContent.setLayout(new BoxLayout(planningContent, BoxLayout.Y_AXIS));
-        planningContent.setOpaque(false);
-
-        // Données d'exemple pour les cours
-        String[][] courses = {
-                {"Lundi 25/04", "08:30 - 12:30", "Algorithmes et Structures de Données"},
-                {"Mardi 26/04", "14:00 - 17:30", "Programmation Java"},
-                {"Mercredi 27/04", "09:00 - 12:00", "Bases de données avancées"},
-                {"Jeudi 28/04", "14:00 - 18:00", "Intelligence Artificielle"}
-        };
-
-        // Création des éléments du planning
-        for (String[] course : courses) {
-            planningContent.add(createPlanningItem(course[0], course[1], course[2]));
-            planningContent.add(Box.createRigidArea(new Dimension(0, 10))); // Espacement vertical
-        }
-
-        panel.add(titleLabel, BorderLayout.NORTH);
-        panel.add(planningContent, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    /**
-     * Crée un élément de cours pour le planning
-     * @param day Jour du cours
-     * @param hours Heures du cours
-     * @param course Nom du cours
-     * @return Panel configuré pour le cours
-     */
-    private JPanel createPlanningItem(String day, String hours, String course) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        panel.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
-
-        // Panel pour le jour et l'heure (à gauche)
-        JPanel timePanel = new JPanel(new GridLayout(2, 1));
-        timePanel.setOpaque(false);
-
-        JLabel dayLabel = new JLabel(day);
-        dayLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        dayLabel.setForeground(EMSI_GRAY);
-
-        JLabel hoursLabel = new JLabel(hours);
-        hoursLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        hoursLabel.setForeground(EMSI_GREEN);
-
-        timePanel.add(dayLabel);
-        timePanel.add(hoursLabel);
-
-        // Intitulé du cours (au centre)
-        JLabel courseLabel = new JLabel(course);
-        courseLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-
-        panel.add(timePanel, BorderLayout.WEST);
-        panel.add(courseLabel, BorderLayout.CENTER);
-
-        // Séparateur horizontal sous chaque cours
-        JSeparator separator = new JSeparator();
-        separator.setForeground(new Color(230, 230, 230));
-        panel.add(separator, BorderLayout.SOUTH);
-
-        return panel;
-    }
-
+    return panel;
+}
     /**
      * Charge une image depuis les ressources
+     * 
      * @param path Chemin de l'image (relatif au dossier resources/images/)
      * @return L'image chargée ou null si non trouvée
      */
     private ImageIcon loadImage(String path) {
         try {
-            // Le chemin de ressource complet sera /images/ suivi du chemin passé en paramètre
+            // Le chemin de ressource complet sera /images/ suivi du chemin passé en
+            // paramètre
             String fullPath = "/images/" + path;
             System.out.println("Attempting to load image from resource path: " + fullPath);
 
@@ -1844,4 +1963,15 @@ public class EnseignantDashboard extends JFrame {
             return null;
         }
     }
+    
+    // Ajoute ceci dans EnseignantDashboard
+    private JPanel createCalendarPanel() {
+    JPanel panel = new JPanel();
+    panel.setBackground(Color.WHITE);
+    panel.add(new JLabel("Calendrier à venir..."));
+    return panel;
+    }
+
+
+
 }

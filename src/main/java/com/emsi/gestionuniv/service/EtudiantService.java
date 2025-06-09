@@ -272,40 +272,56 @@ public class EtudiantService {
     /**
      * Récupère la liste des étudiants d'une classe (groupe) spécifique en utilisant
      * le nom du groupe.
-     * 
+     *
      * @param groupName Le nom de la classe (groupe).
      * @return Une liste d'objets Student.
      */
     public List<Student> getStudentsByGroupName(String groupName) {
         List<Student> students = new ArrayList<>();
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = DBConnect.getConnection();
-            if (conn == null) {
-                throw new SQLException("Impossible d'établir une connexion à la base de données");
-            }
-
-            // SQL query to select students by group name
-            String sql = "SELECT e.* FROM gestion_universitaire.etudiants e WHERE e.groupe = ?";
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, groupName);
-
-            rs = pstmt.executeQuery();
-
+        String sql = "SELECT * FROM etudiants WHERE groupe = ?";
+        try (Connection conn = DBConnect.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, groupName);
+            ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                students.add(createStudentFromResultSet(rs));
+                Student student = new Student();
+                student.setId(rs.getInt("id"));
+                student.setNom(rs.getString("nom"));
+                student.setPrenom(rs.getString("prenom"));
+                student.setMatricule(rs.getString("matricule"));
+                students.add(student);
             }
-
         } catch (SQLException e) {
-            System.err.println("Erreur lors de la récupération des étudiants par groupe : " + e.getMessage());
             e.printStackTrace();
-        } finally {
-            closeResources(rs, pstmt, conn);
         }
+        return students;
+    }
 
+    /**
+     * Récupère la liste des étudiants d'une classe (groupe) spécifique en utilisant
+     * le nom de la classe.
+     *
+     * @param className Le nom de la classe.
+     * @return Une liste d'objets Student.
+     */
+    public List<Student> getStudentsByClassName(String className) {
+        List<Student> students = new ArrayList<>();
+        String sql = "SELECT id, nom, prenom, matricule FROM etudiants WHERE groupe = ?";
+        try (Connection conn = DBConnect.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, className);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Student student = new Student();
+                student.setId(rs.getInt("id")); // Récupère l'ID de l'étudiant
+                student.setNom(rs.getString("nom"));
+                student.setPrenom(rs.getString("prenom"));
+                student.setMatricule(rs.getString("matricule"));
+                students.add(student);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return students;
     }
 }
