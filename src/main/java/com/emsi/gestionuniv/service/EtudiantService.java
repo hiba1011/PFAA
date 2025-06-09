@@ -176,9 +176,9 @@ public class EtudiantService {
     }
 
     /**
-     * Met à jour le chemin de la photo de profil d’un étudiant donné
+     * Met à jour le chemin de la photo de profil d'un étudiant donné
      *
-     * @param id        Identifiant de l’étudiant
+     * @param id        Identifiant de l'étudiant
      * @param photoPath Nouveau chemin de la photo
      * @return true si la mise à jour a réussi, false sinon
      */
@@ -208,7 +208,7 @@ public class EtudiantService {
     }
 
     /**
-     * Crée un objet Student à partir d’un ResultSet
+     * Crée un objet Student à partir d'un ResultSet
      *
      * @param rs Le ResultSet contenant les données de l'étudiant
      * @return Un objet Student entièrement initialisé
@@ -284,11 +284,7 @@ public class EtudiantService {
             ps.setString(1, groupName);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                Student student = new Student();
-                student.setId(rs.getInt("id"));
-                student.setNom(rs.getString("nom"));
-                student.setPrenom(rs.getString("prenom"));
-                student.setMatricule(rs.getString("matricule"));
+                Student student = createStudentFromResultSet(rs);
                 students.add(student);
             }
         } catch (SQLException e) {
@@ -306,17 +302,13 @@ public class EtudiantService {
      */
     public List<Student> getStudentsByClassName(String className) {
         List<Student> students = new ArrayList<>();
-        String sql = "SELECT id, nom, prenom, matricule FROM etudiants WHERE groupe = ?";
+        String sql = "SELECT * FROM etudiants WHERE groupe = ?";
         try (Connection conn = DBConnect.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, className);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                Student student = new Student();
-                student.setId(rs.getInt("id")); // Récupère l'ID de l'étudiant
-                student.setNom(rs.getString("nom"));
-                student.setPrenom(rs.getString("prenom"));
-                student.setMatricule(rs.getString("matricule"));
+                Student student = createStudentFromResultSet(rs);
                 students.add(student);
             }
         } catch (SQLException e) {
