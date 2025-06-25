@@ -153,6 +153,45 @@ public class TeacherService {
         return authenticated;
     }
 
+    public List<Teacher> getAllTeachers() {
+        List<Teacher> teachers = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBConnect.getConnection();
+            if (conn == null) {
+                throw new SQLException("Impossible d'établir une connexion à la base de données");
+            }
+
+            String sql = "SELECT * FROM gestion_universitaire.enseignants";
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Teacher teacher = new Teacher();
+                teacher.setId(rs.getInt("id"));
+                teacher.setNom(rs.getString("nom"));
+                teacher.setPrenom(rs.getString("prenom"));
+                teacher.setEmail(rs.getString("email"));
+                teacher.setPassword(rs.getString("mot_de_passe"));
+                teacher.setDepartement(rs.getString("departement"));
+                teacher.setSpecialite(rs.getString("specialite"));
+                teacher.setTelephone(rs.getString("telephone"));
+                teachers.add(teacher);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la récupération de la liste des enseignants : " + e.getMessage());
+            throw new RuntimeException("Erreur lors de l'accès aux données des enseignants", e);
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+
+        return teachers;
+    }
+
     /**
      * Représente une classe (groupe d'étudiants) enseignée par un professeur.
      * Ceci est une classe interne simple pour transporter les données nécessaires.

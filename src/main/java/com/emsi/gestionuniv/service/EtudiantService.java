@@ -316,4 +316,30 @@ public class EtudiantService {
         }
         return students;
     }
+
+    /**
+     * Récupère tous les étudiants de la base de données
+     * @return Liste de tous les étudiants
+     */
+    public List<Student> getAllStudents() {
+        List<Student> students = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBConnect.getConnection();
+            String sql = String.format("SELECT * FROM %s.%s", DATABASE_SCHEMA, STUDENT_TABLE);
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                students.add(createStudentFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la récupération de tous les étudiants: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+        return students;
+    }
 }

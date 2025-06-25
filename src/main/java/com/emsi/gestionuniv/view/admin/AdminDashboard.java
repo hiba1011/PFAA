@@ -6,6 +6,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import com.emsi.gestionuniv.app.MainApplication;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Tableau de bord administrateur avec un style moderne inspiré du dashboard enseignant.
@@ -29,6 +31,7 @@ public class AdminDashboard extends JFrame {
     private String username;
     private CardLayout cardLayout;
     private JPanel cardPanel;
+    private List<JButton> menuButtons = new ArrayList<>();
 
     public AdminDashboard(String username) {
         if (!"admin".equals(username)) {
@@ -139,7 +142,7 @@ public class AdminDashboard extends JFrame {
         JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         userPanel.setOpaque(false);
 
-        JLabel userLabel = new JLabel("\uD83D\uDC64  " + username);
+        JLabel userLabel = new JLabel(username);
         userLabel.setFont(SUBTITLE_FONT);
         userLabel.setForeground(Color.WHITE);
 
@@ -211,8 +214,10 @@ public class AdminDashboard extends JFrame {
                 "dashboard", "students", "teachers", "courses", "settings"
         };
 
+        menuButtons.clear();
         for (int i = 0; i < menuItems.length; i++) {
             JButton menuButton = createMenuButton(menuItems[i], menuCards[i], i == 0);
+            menuButtons.add(menuButton);
             sidebarPanel.add(menuButton);
             sidebarPanel.add(Box.createRigidArea(new Dimension(0, 12)));
         }
@@ -279,19 +284,28 @@ public class AdminDashboard extends JFrame {
                 g2d.drawString(getText(), x, y);
                 g2d.dispose();
             }
+
+            public void setSelected(boolean selected) {
+                this.isSelected = selected;
+                repaint();
+            }
         };
         button.addActionListener(e -> {
             if ("logout".equals(card)) return;
-            for (Component comp : menuPanel.getComponents()) {
-                if (comp instanceof JButton) {
-                    ((JButton) comp).putClientProperty("selected", false);
+            for (JButton b : menuButtons) {
+                if (b == button) {
+                    ((JButton) b).putClientProperty("selected", true);
+                    if (b instanceof JButton) ((JButton) b).setSelected(true);
+                } else {
+                    ((JButton) b).putClientProperty("selected", false);
+                    if (b instanceof JButton) ((JButton) b).setSelected(false);
                 }
             }
-            button.putClientProperty("selected", true);
             cardLayout.show(cardPanel, card);
             menuPanel.repaint();
         });
         button.putClientProperty("selected", selected);
+        button.setSelected(selected);
         return button;
     }
 
@@ -307,9 +321,9 @@ public class AdminDashboard extends JFrame {
         JPanel statsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
         statsPanel.setOpaque(false);
 
-        statsPanel.add(createModernStatPanel("Étudiants", "187", "\uD83D\uDC68\u200D\uD83C\uDF93", new Color(33, 150, 243)));
-        statsPanel.add(createModernStatPanel("Enseignants", "42", "\uD83D\uDC68\u200D\uD83C\uDFEB", new Color(0, 150, 136)));
-        statsPanel.add(createModernStatPanel("Cours", "56", "\uD83D\uDCDA", new Color(255, 152, 0)));
+        statsPanel.add(createModernStatPanel("Étudiants", "187", "", new Color(33, 150, 243)));
+        statsPanel.add(createModernStatPanel("Enseignants", "42", "", new Color(0, 150, 136)));
+        statsPanel.add(createModernStatPanel("Cours", "56", "", new Color(255, 152, 0)));
 
         JPanel northPanel = new JPanel(new BorderLayout());
         northPanel.setOpaque(false);
@@ -379,15 +393,10 @@ public class AdminDashboard extends JFrame {
         JPanel headerPanel = new JPanel(new BorderLayout(10, 0));
         headerPanel.setOpaque(false);
 
-        JLabel iconLabel = new JLabel(icon);
-        iconLabel.setFont(new Font("Segoe UI", Font.PLAIN, 22));
-        iconLabel.setForeground(color);
-
         JLabel titleLabel = new JLabel(title);
         titleLabel.setFont(STAT_TITLE_FONT);
         titleLabel.setForeground(EMSI_GRAY);
 
-        headerPanel.add(iconLabel, BorderLayout.WEST);
         headerPanel.add(titleLabel, BorderLayout.CENTER);
 
         JLabel valueLabel = new JLabel(value);
@@ -401,11 +410,131 @@ public class AdminDashboard extends JFrame {
         return panel;
     }
 
-    // Les panels suivants gardent la structure mais tu peux les moderniser comme ci-dessus si besoin
-    private JPanel createStudentsPanel() { return createPlaceholderPanel("Gestion des étudiants"); }
-    private JPanel createTeachersPanel() { return createPlaceholderPanel("Gestion des enseignants"); }
-    private JPanel createCoursesPanel() { return createPlaceholderPanel("Gestion des cours"); }
-    private JPanel createSettingsPanel() { return createPlaceholderPanel("Paramètres du système"); }
+    private JPanel createStudentsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(EMSI_LIGHT_GRAY);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel titleLabel = new JLabel("Liste des étudiants");
+        titleLabel.setFont(TITLE_FONT);
+        titleLabel.setForeground(EMSI_GREEN);
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        // Récupération des étudiants
+        java.util.List<com.emsi.gestionuniv.model.user.Student> students = new com.emsi.gestionuniv.service.EtudiantService().getAllStudents();
+        String[] columns = {"Matricule", "Prénom", "Nom", "Email", "Filière", "Promotion", "Groupe"};
+        Object[][] data = new Object[students.size()][columns.length];
+        for (int i = 0; i < students.size(); i++) {
+            var s = students.get(i);
+            data[i][0] = s.getMatricule();
+            data[i][1] = s.getPrenom();
+            data[i][2] = s.getNom();
+            data[i][3] = s.getEmail();
+            data[i][4] = s.getFiliere();
+            data[i][5] = s.getPromotion();
+            data[i][6] = s.getGroupe();
+        }
+        javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(data, columns) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+        JTable table = new JTable(model);
+        table.setRowHeight(28);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
+        table.getTableHeader().setBackground(EMSI_LIGHT_GRAY);
+        table.getTableHeader().setForeground(EMSI_GREEN);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createLineBorder(EMSI_GREEN, 1));
+        panel.add(scrollPane, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel createTeachersPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(EMSI_LIGHT_GRAY);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel titleLabel = new JLabel("Liste des enseignants");
+        titleLabel.setFont(TITLE_FONT);
+        titleLabel.setForeground(EMSI_GREEN);
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        // Récupération des enseignants
+        java.util.List<com.emsi.gestionuniv.model.user.Teacher> teachers = new com.emsi.gestionuniv.service.TeacherService().getAllTeachers();
+        com.emsi.gestionuniv.service.TeacherService teacherService = new com.emsi.gestionuniv.service.TeacherService();
+        String[] columns = {"Matricule", "Prénom", "Nom", "Email", "Telephone", "Spécialité", "Groupes"};
+        Object[][] data = new Object[teachers.size()][columns.length];
+        for (int i = 0; i < teachers.size(); i++) {
+            var t = teachers.get(i);
+            data[i][0] = t.getId();
+            data[i][1] = t.getPrenom();
+            data[i][2] = t.getNom();
+            data[i][3] = t.getEmail();
+            data[i][4] = t.getTelephone();
+            data[i][5] = t.getSpecialite();
+            // Récupérer les groupes enseignés
+            java.util.List<com.emsi.gestionuniv.service.TeacherService.Classe> groupes = teacherService.getClassesByTeacherId(t.getId());
+            String groupesStr = groupes.stream().map(com.emsi.gestionuniv.service.TeacherService.Classe::getNom).reduce((a, b) -> a + ", " + b).orElse("");
+            data[i][6] = groupesStr;
+        }
+        javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(data, columns) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+        JTable table = new JTable(model);
+        table.setRowHeight(28);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
+        table.getTableHeader().setBackground(EMSI_LIGHT_GRAY);
+        table.getTableHeader().setForeground(EMSI_GREEN);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createLineBorder(EMSI_GREEN, 1));
+        panel.add(scrollPane, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel createCoursesPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(EMSI_LIGHT_GRAY);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel titleLabel = new JLabel("Liste des cours");
+        titleLabel.setFont(TITLE_FONT);
+        titleLabel.setForeground(EMSI_GREEN);
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        java.util.List<com.emsi.gestionuniv.model.academic.cours> coursList = new com.emsi.gestionuniv.service.CoursService().getAllCours();
+        String[] columns = {"Code", "Intitulé", "Filière", "Niveau", "Effectif", "Volume horaire"};
+        Object[][] data = new Object[coursList.size()][columns.length];
+        for (int i = 0; i < coursList.size(); i++) {
+            var c = coursList.get(i);
+            data[i][0] = c.getCode();
+            data[i][1] = c.getIntitule();
+            data[i][2] = c.getFiliere();
+            data[i][3] = c.getNiveau();
+            data[i][4] = c.getEffectif();
+            data[i][5] = c.getVolumeHoraire();
+        }
+        javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(data, columns) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+        JTable table = new JTable(model);
+        table.setRowHeight(28);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
+        table.getTableHeader().setBackground(EMSI_LIGHT_GRAY);
+        table.getTableHeader().setForeground(EMSI_GREEN);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createLineBorder(EMSI_GREEN, 1));
+        panel.add(scrollPane, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel createSettingsPanel() {
+        return createPlaceholderPanel("Paramètres du système");
+    }
 
     // Placeholder moderne pour les autres panels
     private JPanel createPlaceholderPanel(String title) {

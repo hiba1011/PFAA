@@ -14,6 +14,9 @@ public class Teacher extends User {
     /** Spécialité ou domaine d'expertise de l'enseignant */
     private String specialite;
 
+    /** Numéro de téléphone de l'enseignant */
+    private String telephone;
+
     /**
      * Constructeur complet pour créer un nouvel enseignant
      *
@@ -24,19 +27,42 @@ public class Teacher extends User {
      * @param password Mot de passe de l'enseignant
      * @param departement Département auquel appartient l'enseignant
      * @param specialite Spécialité ou domaine d'expertise de l'enseignant
+     * @param telephone Numéro de téléphone de l'enseignant
      */
-    public Teacher(int id, String nom, String prenom, String email, String password, String departement, String specialite) {
+    public Teacher(int id, String nom, String prenom, String email, String password,
+                   String departement, String specialite, String telephone) {
         // Appel du constructeur de la classe parente avec le rôle "TEACHER" prédéfini
         super(id, password, nom, prenom, email, "TEACHER");
         this.departement = departement;
         this.specialite = specialite;
+        this.telephone = telephone;
     }
 
-   public Teacher(){
+    /**
+     * Constructeur par défaut
+     */
+    public Teacher() {
         super(0, "", "", "", "", "TEACHER");
-   }
+    }
 
     // Getters and Setters
+
+    /**
+     * Récupère le numéro de téléphone de l'enseignant
+     * @return Le numéro de téléphone de l'enseignant
+     */
+    public String getTelephone() {
+        return telephone;
+    }
+
+    /**
+     * Définit le numéro de téléphone de l'enseignant
+     * @param telephone Nouveau numéro de téléphone
+     */
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
+    }
+
     /**
      * Récupère le département de l'enseignant
      * @return Le département de l'enseignant
@@ -89,6 +115,4 @@ public class Teacher extends User {
     public String getFullName() {
         return getPrenom() + " " + getNom();
     }
-
-
 }

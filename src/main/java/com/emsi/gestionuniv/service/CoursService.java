@@ -257,4 +257,38 @@ public class CoursService {
         }
         return -1; // Retourne -1 si aucun cours n'est trouvé
     }
+
+    /**
+     * Récupère tous les cours de la base de données
+     * @return Liste de tous les cours
+     */
+    public List<cours> getAllCours() {
+        List<cours> coursList = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBConnect.getConnection();
+            String sql = String.format("SELECT * FROM %s.%s", DATABASE_SCHEMA, COURS_TABLE);
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                cours c = new cours();
+                c.setId(rs.getInt("id"));
+                c.setCode(rs.getString("code"));
+                c.setIntitule(rs.getString("intitule"));
+                c.setFiliere(rs.getString("filiere"));
+                c.setNiveau(rs.getString("niveau"));
+                c.setEffectif(rs.getInt("effectif"));
+                c.setVolumeHoraire(rs.getString("volume_horaire"));
+                coursList.add(c);
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la récupération de tous les cours: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+        return coursList;
+    }
 }
