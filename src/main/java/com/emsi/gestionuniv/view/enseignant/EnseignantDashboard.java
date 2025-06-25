@@ -129,29 +129,30 @@ public class EnseignantDashboard extends JFrame {
      * 
      * @return The profile panel.
      */
-    private JPanel createProfilePanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(BACKGROUND_WHITE);
-        panel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
+  private JPanel createProfilePanel() {
+    JPanel panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setBackground(BACKGROUND_WHITE);
+    panel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
 
-        JLabel titleLabel = new JLabel("Mon Profil");
-        titleLabel.setFont(TITLE_FONT);
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(titleLabel);
+    JLabel titleLabel = new JLabel("Mon Profil");
+    titleLabel.setFont(TITLE_FONT);
+    titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    panel.add(titleLabel);
 
-        panel.add(Box.createVerticalStrut(40));
+    panel.add(Box.createVerticalStrut(40));
 
-        // Display teacher information
-        addProfileInfo(panel, "Nom Complet:", teacher.getFullName());
-        addProfileInfo(panel, "Email:", teacher.getEmail());
-        addProfileInfo(panel, "Département:", teacher.getDepartement());
-        addProfileInfo(panel, "Spécialité:", teacher.getSpecialite());
+    // Display teacher information
+    addProfileInfo(panel, "Nom Complet:", teacher.getFullName());
+    addProfileInfo(panel, "Email:", teacher.getEmail());
+    addProfileInfo(panel, "Département:", teacher.getDepartement());
+    addProfileInfo(panel, "Spécialité:", teacher.getSpecialite());
 
-        panel.add(Box.createVerticalGlue()); // Push everything to the top
+    panel.add(Box.createVerticalGlue()); // Push everything to the top
 
-        return panel;
-    }
+
+    return panel;
+}
 
     /**
      * Helper method to add a label and value to the profile panel.
@@ -409,6 +410,60 @@ public class EnseignantDashboard extends JFrame {
         sidebarPanel.add(logoLabel);
         sidebarPanel.add(Box.createVerticalStrut(30));
 
+        // --- Ajout : Informations personnelles enseignant (similaire à l'étudiant) ---
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setOpaque(false);
+        infoPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
+
+        // Espace pour la photo (statique pour l'instant)
+        JLabel photoLabel = new JLabel();
+        photoLabel.setPreferredSize(new Dimension(90, 90));
+        photoLabel.setMaximumSize(new Dimension(90, 90));
+        photoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Image par défaut (icône enseignant)
+        ImageIcon icon = new ImageIcon(getClass().getResource("/images/teacher_icon.jpg"));
+        Image img = icon.getImage().getScaledInstance(90, 90, Image.SCALE_SMOOTH);
+        photoLabel.setIcon(new ImageIcon(img));
+        infoPanel.add(photoLabel);
+        infoPanel.add(Box.createVerticalStrut(8));
+
+        JLabel nomLabel = new JLabel(teacher.getFullName());
+        nomLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        nomLabel.setForeground(Color.WHITE);
+        nomLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        infoPanel.add(nomLabel);
+
+        JLabel emailLabel = new JLabel(teacher.getEmail());
+        emailLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        emailLabel.setForeground(new Color(220, 255, 220));
+        emailLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        infoPanel.add(emailLabel);
+
+        JLabel depLabel = new JLabel("Département : " + teacher.getDepartement());
+        depLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        depLabel.setForeground(Color.WHITE);
+        depLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        infoPanel.add(depLabel);
+
+        JLabel specLabel = new JLabel("Spécialité : " + teacher.getSpecialite());
+        specLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        specLabel.setForeground(Color.WHITE);
+        specLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        infoPanel.add(specLabel);
+
+        JLabel telLabel = new JLabel("Tél : " + teacher.getTelephone());
+        telLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        telLabel.setForeground(Color.WHITE);
+        telLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        infoPanel.add(telLabel);
+
+        sidebarPanel.add(infoPanel);
+        sidebarPanel.add(Box.createVerticalStrut(10));
+        // --- Fin ajout infos personnelles ---
+
+       
+
         // Menu items avec icônes Unicode
         String[][] menuItems = {
                 { "\uD83C\uDFE0", "Tableau de bord" },
@@ -499,7 +554,7 @@ public class EnseignantDashboard extends JFrame {
                 showClassesPanel();
                 break;
             case "Gestion des notes":
-                showGradesPanel();
+                new SaisieNotesDialog(this, currentTeacherId).setVisible(true);
                 break;
             case "Planning":
                 showSchedulePanel();
@@ -530,270 +585,11 @@ public class EnseignantDashboard extends JFrame {
 
     private void showGradesPanel() {
         contentPanel.removeAll();
-        contentPanel.add(createGradesPanel());
         contentPanel.revalidate();
         contentPanel.repaint();
     }
 
-private JPanel createGradesPanel() {
-    System.out.println("DEBUG: createGradesPanel() appelé");
-    JPanel panel = new JPanel(new BorderLayout());
-    panel.setBackground(BACKGROUND_WHITE);
-    panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-    // Ajoute des logs pour vérifier les étapes
-    System.out.println("DEBUG: Initialisation des composants du panel de gestion des notes");
-
-    // Sélecteur de classe
-    JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-    topPanel.setOpaque(false);
-    JLabel classLabel = new JLabel("Classe : ");
-    classLabel.setFont(SUBTITLE_FONT);
-
-TeacherService teacherService = new TeacherService();
-List<TeacherService.Classe> classes = teacherService.getClassesByTeacherId(currentTeacherId);
-
-JComboBox<String> classCombo = new JComboBox<>();
-for (TeacherService.Classe classe : classes) {
-    classCombo.addItem(classe.getNom()); // Assure-toi que `getNom()` retourne le nom de la classe
-}
-
-    topPanel.add(classLabel);
-    topPanel.add(classCombo);
-
-       panel.add(topPanel, BorderLayout.NORTH);
-
-    // Ajoute des logs pour vérifier les combobox
-    System.out.println("DEBUG: Combobox de classe initialisé avec " + classCombo.getItemCount() + " éléments");
-
-    
-    // Sélecteur de matière
-    JLabel courseLabel = new JLabel("Matière : ");
-    courseLabel.setFont(SUBTITLE_FONT);
-
-        // Tableau des notes
-    String[] columns = {"ID_etudiant","Nom", "Prénom", "Contrôle Continu", "Examen", "TP", "Note Finale", "Validation" };
-    DefaultTableModel model = new DefaultTableModel(columns, 0) {
-        @Override
-        public boolean isCellEditable(int row, int col) {
-            return col >= 3 && col <= 7; // Seules les notes sont éditables
-        }
-    };
-    // Ajoute un écouteur pour recalculer la note finale et la mention
-model.addTableModelListener(e -> {
-    int row = e.getFirstRow(); // Ligne modifiée
-    int column = e.getColumn(); // Colonne modifiée
-
-    // Vérifie si la modification concerne les colonnes des notes
-    if (column >= 3 && column <= 5) { // Colonnes Contrôle Continu, Examen, TP
-        try {
-            // Récupère les valeurs des colonnes
-            double controleContinu = Double.parseDouble(model.getValueAt(row, 3).toString());
-            double examen = Double.parseDouble(model.getValueAt(row, 4).toString());
-            double tp = Double.parseDouble(model.getValueAt(row, 5).toString());
-
-            // Calcule la note finale
-            double noteFinale = (controleContinu + examen + tp) / 3;
-
-            // Détermine la mention
-            String validation = noteFinale >= 10 ? "Validée" : "Non validée";
-
-            // Met à jour les colonnes Note Finale et Validation
-            model.setValueAt(noteFinale, row, 6); // Colonne Note Finale
-            model.setValueAt(validation, row, 7); // Colonne Validation
-        } catch (NumberFormatException ex) {
-            // Gestion des erreurs si les valeurs ne sont pas valides
-            JOptionPane.showMessageDialog(panel, "Veuillez entrer des valeurs numériques valides.", "Erreur", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-});
-
-    JComboBox<String> courseCombo = new JComboBox<>();
-    CoursService coursService = new CoursService();
-    List<String> matieres = coursService.getMatieresByTeacherId(currentTeacherId);
-    for (String matiere : matieres) {
-        courseCombo.addItem(matiere);
-    }
-    
-
-    // Ajoute un ActionListener pour mettre à jour currentCoursId
-courseCombo.addActionListener(e -> {
-    String selectedIntitule = (String) courseCombo.getSelectedItem();
-    if (selectedIntitule != null) {
-        currentCoursId = coursService.getCoursIdByIntitule(selectedIntitule); // Récupère l'ID du cours
-        System.out.println("DEBUG: currentCoursId mis à jour : " + currentCoursId);
-
-        // Charger les notes des étudiants
-        String selectedClass = (String) classCombo.getSelectedItem();
-        if (selectedClass != null) {
-            NoteService noteService = new NoteService();
-            List<Note> notes = noteService.getNotesByClassAndCourse(selectedClass, currentCoursId);
-
-            model.setRowCount(0); // Réinitialise le tableau
-            for (Note note : notes) {
-                model.addRow(new Object[] {
-                    note.getEtudiantId(),
-                    note.getNomEtudiant(), // Remplace par le nom réel si nécessaire
-                    note.getPrenomEtudiant(), // Remplace par le prénom réel si nécessaire
-                    note.getControleContinu(),
-                    note.getExamen(),
-                    note.getTp(),
-                    note.getNoteFinale(),
-                    note.getValidation()
-                });
-            }
-            System.out.println("DEBUG: Tableau des notes mis à jour avec " + model.getRowCount() + " lignes.");
-        }
-    }
-});
-topPanel.add(Box.createHorizontalStrut(20));
-topPanel.add(courseLabel);
-topPanel.add(courseCombo);
-
-    panel.add(topPanel, BorderLayout.NORTH);
-
-    // Ajoute des logs pour vérifier les combobox
-    System.out.println("DEBUG: Combobox de matière initialisé avec " + courseCombo.getItemCount() + " éléments");
-
-
-    JTable table = new JTable(model);
-    table.setRowHeight(30);
-
-    JScrollPane scrollPane = new JScrollPane(table);
-    panel.add(scrollPane, BorderLayout.CENTER);
-
-    // Ajoute des logs pour vérifier le tableau
-    System.out.println("DEBUG: Tableau des notes initialisé");
-
-    // Bouton pour charger les élèves
-String selectedClass = (String) classCombo.getSelectedItem();
-String selectedCourse = (String) courseCombo.getSelectedItem();
-if (selectedClass != null && selectedCourse != null) {
-    NoteService noteService = new NoteService();
-    List<Note> notes = noteService.getNotesByClassAndCourse(selectedClass, currentCoursId);
-
-    model.setRowCount(0); // Réinitialise le tableau
-    for (Note note : notes) {
-        model.addRow(new Object[] {
-            note.getEtudiantId(),
-            "Nom Étudiant", // Remplace par le nom réel si nécessaire
-            "Prénom Étudiant", // Remplace par le prénom réel si nécessaire
-            note.getControleContinu(),
-            note.getExamen(),
-            note.getTp(),
-            note.getNoteFinale(),
-            note.getValidation()
-        });
-    }
-    System.out.println("DEBUG: Tableau des notes mis à jour avec " + model.getRowCount() + " lignes.");
-}
-        // Bouton pour enregistrer les notes
-    JButton saveButton = new JButton("Enregistrer les notes");
-saveButton.addActionListener(e -> {
-    List<Note> notes = new ArrayList<>();
-    for (int i = 0; i < model.getRowCount(); i++) {
-        Note note = new Note();
-        note.setEtudiantId((Integer) model.getValueAt(i, 0)); // ID de l'étudiant
-        note.setCoursId(currentCoursId); // ID du cours
-        note.setControleContinu(Double.parseDouble(model.getValueAt(i, 3).toString()));
-        note.setExamen(Double.parseDouble(model.getValueAt(i, 4).toString()));
-        note.setTp(Double.parseDouble(model.getValueAt(i, 5).toString()));
-        double noteFinale = (note.getControleContinu() + note.getExamen() + note.getTp()) / 3;
-        note.setNoteFinale(noteFinale);
-        note.setValidation(noteFinale >= 10 ? "Validée" : "Non validée");
-        notes.add(note);
-    }
-
-    NoteService noteService = new NoteService();
-    for (Note note : notes) {
-        boolean success = noteService.saveOrUpdateNote(note);
-        if (!success) {
-            JOptionPane.showMessageDialog(panel, "Erreur lors de l'enregistrement des notes.", "Erreur", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-    }
-    JOptionPane.showMessageDialog(panel, "Notes enregistrées avec succès.", "Succès", JOptionPane.INFORMATION_MESSAGE);
-});
-
-JButton addStudentButton = new JButton("Ajouter un étudiant");
-addStudentButton.addActionListener(e -> {
-    // Ouvrir une boîte de dialogue pour ajouter un étudiant
-    JTextField studentIdField = new JTextField();
-    JTextField studentNameField = new JTextField();
-    JTextField studentSurnameField = new JTextField();
-    JTextField controleContinuField = new JTextField();
-    JTextField examenField = new JTextField();
-    JTextField tpField = new JTextField();
-
-    JPanel dialogPanel = new JPanel(new GridLayout(0, 2));
-    dialogPanel.add(new JLabel("ID Étudiant :"));
-    dialogPanel.add(studentIdField);
-    dialogPanel.add(new JLabel("Nom :"));
-    dialogPanel.add(studentNameField);
-    dialogPanel.add(new JLabel("Prénom :"));
-    dialogPanel.add(studentSurnameField);
-    dialogPanel.add(new JLabel("Contrôle Continu :"));
-    dialogPanel.add(controleContinuField);
-    dialogPanel.add(new JLabel("Examen :"));
-    dialogPanel.add(examenField);
-    dialogPanel.add(new JLabel("TP :"));
-    dialogPanel.add(tpField);
-
-    int result = JOptionPane.showConfirmDialog(null, dialogPanel, "Ajouter un étudiant", JOptionPane.OK_CANCEL_OPTION);
-    if (result == JOptionPane.OK_OPTION) {
-        try {
-            int studentId = Integer.parseInt(studentIdField.getText());
-            String studentName = studentNameField.getText();
-            String studentSurname = studentSurnameField.getText();
-            double controleContinu = Double.parseDouble(controleContinuField.getText());
-            double examen = Double.parseDouble(examenField.getText());
-            double tp = Double.parseDouble(tpField.getText());
-            double noteFinale = (controleContinu + examen + tp) / 3;
-            String validation = noteFinale >= 10 ? "Validée" : "Non validée";
-
-            // Ajouter l'étudiant au tableau
-            model.addRow(new Object[] {
-                studentId,
-                studentName,
-                studentSurname,
-                controleContinu,
-                examen,
-                tp,
-                noteFinale,
-                validation
-            });
-
-            // Ajouter l'étudiant dans la base de données
-            NoteService noteService = new NoteService();
-            Note note = new Note();
-            note.setEtudiantId(studentId);
-            note.setCoursId(currentCoursId);
-            note.setControleContinu(controleContinu);
-            note.setExamen(examen);
-            note.setTp(tp);
-            note.setNoteFinale(noteFinale);
-            note.setValidation(validation);
-
-            boolean success = noteService.saveOrUpdateNote(note);
-            if (!success) {
-                JOptionPane.showMessageDialog(panel, "Erreur lors de l'ajout de l'étudiant.", "Erreur", JOptionPane.ERROR_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(panel, "Étudiant ajouté avec succès.", "Succès", JOptionPane.INFORMATION_MESSAGE);
-            }
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(panel, "Veuillez entrer des valeurs valides.", "Erreur", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-});
-
-JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-buttonPanel.add(saveButton);
-buttonPanel.add(addStudentButton);
-
-panel.add(buttonPanel, BorderLayout.SOUTH);
-
-return panel;
-}
 
     private void showClassesPanel() {
         contentPanel.removeAll();
@@ -1761,30 +1557,28 @@ return panel;
     private JPanel createContentPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(EMSI_LIGHT_GRAY);
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
-        // Titre du contenu
+        // Titre du contenu modernisé
         JLabel contentTitle = new JLabel("Tableau de bord");
-        contentTitle.setFont(HEADING_FONT);
-        contentTitle.setForeground(EMSI_GRAY);
+        contentTitle.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        contentTitle.setForeground(EMSI_GREEN);
 
-        // Zone de recherche avec style moderne
+        // Zone de recherche moderne
         final JTextField searchField = new JTextField(20) {
             {
                 setOpaque(false);
                 setBorder(new CompoundBorder(
                         BorderFactory.createLineBorder(new Color(200, 200, 200)),
-                        BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+                        BorderFactory.createEmptyBorder(8, 14, 8, 14)));
             }
-
             @Override
             protected void paintComponent(Graphics g) {
-                // Rendu personnalisé pour un champ arrondi
                 if (!isOpaque()) {
                     Graphics2D g2d = (Graphics2D) g.create();
                     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     g2d.setColor(Color.WHITE);
-                    g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                    g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                     g2d.dispose();
                 }
                 super.paintComponent(g);
@@ -1792,7 +1586,6 @@ return panel;
         };
         searchField.setText("Rechercher...");
         searchField.setForeground(Color.GRAY);
-
         searchField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
@@ -1801,7 +1594,6 @@ return panel;
                     searchField.setForeground(Color.BLACK);
                 }
             }
-
             @Override
             public void focusLost(FocusEvent e) {
                 if (searchField.getText().isEmpty()) {
@@ -1816,98 +1608,99 @@ return panel;
         titlePanel.setOpaque(false);
         titlePanel.add(contentTitle, BorderLayout.WEST);
         titlePanel.add(searchField, BorderLayout.EAST);
+        titlePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 30, 0));
 
-        // Panneaux de statistiques (4 cartes)
-        JPanel statsPanel = new JPanel(new GridLayout(1, 4, 15, 0));
+        // Panneaux de statistiques (cartes modernes)
+        JPanel statsPanel = new JPanel();
+        statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.X_AXIS));
         statsPanel.setOpaque(false);
-        statsPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+        statsPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 40, 0));
 
-        // Création des cartes de statistiques avec icônes Unicode
         statsPanel.add(createModernStatPanel("Cours", "5", "\uD83D\uDCDA")); // 📚
+        statsPanel.add(Box.createHorizontalStrut(30));
         statsPanel.add(createModernStatPanel("Étudiants", "120", "\uD83D\uDC64")); // 👤
+        statsPanel.add(Box.createHorizontalStrut(30));
         statsPanel.add(createModernStatPanel("Notes en attente", "45", "\uD83D\uDCCB")); // 📋
+        statsPanel.add(Box.createHorizontalStrut(30));
         statsPanel.add(createModernStatPanel("Messages", "12", "\uD83D\uDCE8")); // 📨
 
         // Panneau pour les dernières activités
         JPanel activitiesPanel = createActivitiesPanel();
-
-        // Panneau pour le calendrier et les tâches
         JPanel calendarPanel = createCalendarPanel();
-
-        // Organisation des panneaux d'information (2 colonnes)
-        JPanel dashboardContent = new JPanel(new GridLayout(1, 2, 15, 0));
+        JPanel dashboardContent = new JPanel(new GridLayout(1, 2, 30, 0));
         dashboardContent.setOpaque(false);
         dashboardContent.add(activitiesPanel);
         dashboardContent.add(calendarPanel);
 
-        // Assemblage final du contenu
         panel.add(titlePanel, BorderLayout.NORTH);
         panel.add(statsPanel, BorderLayout.CENTER);
         panel.add(dashboardContent, BorderLayout.SOUTH);
-
         return panel;
     }
 
-    /**
-     * Crée une carte de statistique avec un style moderne
-     * 
-     * @param title Titre de la statistique
-     * @param value Valeur numérique à afficher
-     * @param icon  Icône Unicode
-     * @return Panel de la carte configurée
-     */
     private JPanel createModernStatPanel(String title, String value, String icon) {
-        // Panel avec coins arrondis et ombre
+        final boolean[] hovering = {false};
         JPanel panel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
                 // Fond blanc arrondi
                 g2d.setColor(Color.WHITE);
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-
-                // Effet d'ombre légère
-                for (int i = 0; i < 4; i++) {
-                    g2d.setColor(new Color(0, 0, 0, 2 + i));
-                    g2d.drawRoundRect(i, i, getWidth() - 2 * i - 1, getHeight() - 2 * i - 1, 12, 12);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 24, 24);
+                // Ombre portée
+                if (hovering[0]) {
+                    g2d.setColor(new Color(0,0,0,40));
+                    g2d.fillRoundRect(6, 6, getWidth()-12, getHeight()-12, 24, 24);
+                } else {
+                    g2d.setColor(new Color(0,0,0,18));
+                    g2d.fillRoundRect(8, 8, getWidth()-16, getHeight()-16, 24, 24);
                 }
-
                 g2d.dispose();
             }
         };
-
-        panel.setLayout(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        panel.setPreferredSize(new Dimension(200, 160));
+        panel.setMaximumSize(new Dimension(220, 180));
         panel.setOpaque(false);
-
-        // En-tête avec icône et titre
-        JPanel headerPanel = new JPanel(new BorderLayout(10, 0));
-        headerPanel.setOpaque(false);
-
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
+        // Hover effect
+        panel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                panel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                hovering[0] = true;
+                panel.repaint();
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                panel.setCursor(Cursor.getDefaultCursor());
+                hovering[0] = false;
+                panel.repaint();
+            }
+        });
+        // Icône
         JLabel iconLabel = new JLabel(icon);
-        iconLabel.setFont(new Font("Arial Unicode MS", Font.PLAIN, 18));
-        iconLabel.setForeground(Color.WHITE);
-
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(STAT_TITLE_FONT);
-        titleLabel.setForeground(EMSI_GRAY);
-
-        headerPanel.add(iconLabel, BorderLayout.WEST);
-        headerPanel.add(titleLabel, BorderLayout.CENTER);
-
-        // Valeur de la statistique (grand nombre)
-        JLabel valueLabel = new JLabel(value);
-        valueLabel.setFont(STAT_VALUE_FONT);
-        valueLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        valueLabel.setForeground(new Color(50, 50, 50));
-
-        // Assemblage de la carte
-        panel.add(headerPanel, BorderLayout.NORTH);
-        panel.add(valueLabel, BorderLayout.CENTER);
-
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 38));
+        iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        iconLabel.setBorder(BorderFactory.createEmptyBorder(0,0,8,0));
+        // Titre
+        JLabel titre = new JLabel(title);
+        titre.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        titre.setForeground(EMSI_GREEN);
+        titre.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Valeur
+        JLabel valeur = new JLabel(value);
+        valeur.setFont(new Font("Segoe UI", Font.BOLD, 36));
+        valeur.setForeground(new Color(44, 62, 80));
+        valeur.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Ajout à la carte
+        panel.add(iconLabel);
+        panel.add(titre);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(valeur);
+        panel.add(Box.createVerticalGlue());
         return panel;
     }
 
@@ -1972,6 +1765,492 @@ return panel;
     return panel;
     }
 
+    // --- Ajout : Méthode de modification du profil enseignant ---
+    private void showEditProfileDialog() {
+        // Création du JDialog personnalisé
+        JDialog dialog = new JDialog(this, "Modifier le profil", true);
+        dialog.setUndecorated(true);
+        dialog.setSize(370, 410);
+        dialog.setLocationRelativeTo(this);
+        dialog.setBackground(new Color(0,0,0,0));
 
+        // Main panel with EMSI green gradient, rounded corners, drop shadow
+        JPanel mainPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, true);
+                GradientPaint gp = new GradientPaint(0, 0, EMSI_GREEN, getWidth(), getHeight(), EMSI_DARK_GREEN);
+                g2d.setPaint(gp);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 32, 32);
+                // Drop shadow
+                g2d.setColor(new Color(0,0,0,30));
+                g2d.fillRoundRect(8, 8, getWidth()-16, getHeight()-16, 32, 32);
+                g2d.dispose();
+                super.paintComponent(g);
+            }
+        };
+        mainPanel.setOpaque(false);
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBorder(new EmptyBorder(28, 32, 28, 32));
 
+        JLabel titre = new JLabel("Modifier mon profil");
+        titre.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        titre.setForeground(Color.WHITE);
+        titre.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(titre);
+        mainPanel.add(Box.createVerticalStrut(18));
+
+        // Circular profile picture with border and shadow
+        JLabel photoPreview = new JLabel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, true);
+                g2.setColor(new Color(0,0,0,40));
+                g2.fillOval(4, 4, 92, 92); // shadow
+                g2.dispose();
+            }
+        };
+        photoPreview.setPreferredSize(new Dimension(100, 100));
+        photoPreview.setMaximumSize(new Dimension(100, 100));
+        photoPreview.setAlignmentX(Component.CENTER_ALIGNMENT);
+        photoPreview.setHorizontalAlignment(SwingConstants.CENTER);
+        String currentPhoto = teacher.getPhoto();
+        if (currentPhoto != null && !currentPhoto.isEmpty()) {
+            ImageIcon icon = new ImageIcon(currentPhoto);
+            Image img = icon.getImage().getScaledInstance(90, 90, Image.SCALE_SMOOTH);
+            photoPreview.setIcon(new ImageIcon(img));
+        } else {
+            ImageIcon icon = new ImageIcon(getClass().getResource("/images/teacher_icon.jpg"));
+            Image img = icon.getImage().getScaledInstance(90, 90, Image.SCALE_SMOOTH);
+            photoPreview.setIcon(new ImageIcon(img));
+        }
+        photoPreview.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.WHITE, 4, true),
+            BorderFactory.createEmptyBorder(3,3,3,3)));
+        photoPreview.setOpaque(false);
+        mainPanel.add(photoPreview);
+        mainPanel.add(Box.createVerticalStrut(8));
+
+        // Change photo button
+        JButton choosePhotoBtn = new JButton("Changer la photo");
+        choosePhotoBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        choosePhotoBtn.setBackground(EMSI_LIGHT_GREEN);
+        choosePhotoBtn.setForeground(EMSI_DARK_GREEN);
+        choosePhotoBtn.setFocusPainted(false);
+        choosePhotoBtn.setBorder(BorderFactory.createLineBorder(EMSI_GREEN, 2, true));
+        choosePhotoBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        choosePhotoBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        final String[] selectedPhoto = { currentPhoto };
+        choosePhotoBtn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) { choosePhotoBtn.setBackground(EMSI_GREEN); choosePhotoBtn.setForeground(Color.WHITE); }
+            public void mouseExited(MouseEvent e) { choosePhotoBtn.setBackground(EMSI_LIGHT_GREEN); choosePhotoBtn.setForeground(EMSI_DARK_GREEN); }
+        });
+        choosePhotoBtn.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            if (fileChooser.showOpenDialog(dialog) == JFileChooser.APPROVE_OPTION) {
+                String path = fileChooser.getSelectedFile().getAbsolutePath();
+                selectedPhoto[0] = path;
+                ImageIcon icon = new ImageIcon(path);
+                Image img = icon.getImage().getScaledInstance(90, 90, Image.SCALE_SMOOTH);
+                photoPreview.setIcon(new ImageIcon(img));
+            }
+        });
+        mainPanel.add(choosePhotoBtn);
+        mainPanel.add(Box.createVerticalStrut(18));
+
+        // Modern phone field
+        JLabel telLabel = new JLabel("Numéro de téléphone :");
+        telLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        telLabel.setForeground(Color.WHITE);
+        telLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(telLabel);
+        mainPanel.add(Box.createVerticalStrut(4));
+        JTextField telField = new JTextField(teacher.getTelephone());
+        telField.setMaximumSize(new Dimension(220, 36));
+        telField.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        telField.setBackground(EMSI_LIGHT_GREEN);
+        telField.setForeground(EMSI_DARK_GREEN);
+        telField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(EMSI_GREEN, 2, true),
+            new EmptyBorder(6, 12, 6, 12)));
+        telField.setCaretColor(EMSI_GREEN);
+        mainPanel.add(telField);
+        mainPanel.add(Box.createVerticalStrut(22));
+
+        // OK/Cancel buttons, modern style
+        JPanel btnPanel = new JPanel();
+        btnPanel.setOpaque(false);
+        btnPanel.setLayout(new BoxLayout(btnPanel, BoxLayout.X_AXIS));
+        JButton okBtn = new JButton("Valider");
+        okBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        okBtn.setBackground(EMSI_GREEN);
+        okBtn.setForeground(Color.WHITE);
+        okBtn.setFocusPainted(false);
+        okBtn.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2, true));
+        okBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        okBtn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) { okBtn.setBackground(EMSI_DARK_GREEN); }
+            public void mouseExited(MouseEvent e) { okBtn.setBackground(EMSI_GREEN); }
+        });
+        JButton cancelBtn = new JButton("Annuler");
+        cancelBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        cancelBtn.setBackground(EMSI_LIGHT_GREEN);
+        cancelBtn.setForeground(EMSI_DARK_GREEN);
+        cancelBtn.setFocusPainted(false);
+        cancelBtn.setBorder(BorderFactory.createLineBorder(EMSI_GREEN, 2, true));
+        cancelBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        cancelBtn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) { cancelBtn.setBackground(EMSI_GREEN); cancelBtn.setForeground(Color.WHITE); }
+            public void mouseExited(MouseEvent e) { cancelBtn.setBackground(EMSI_LIGHT_GREEN); cancelBtn.setForeground(EMSI_DARK_GREEN); }
+        });
+        btnPanel.add(okBtn);
+        btnPanel.add(Box.createHorizontalStrut(18));
+        btnPanel.add(cancelBtn);
+        mainPanel.add(btnPanel);
+
+        // Fade-in animation
+        mainPanel.setOpaque(false);
+        dialog.setContentPane(mainPanel);
+        dialog.setOpacity(0f);
+        Timer timer = new Timer(10, null);
+        timer.addActionListener(new ActionListener() {
+            float opacity = 0f;
+            public void actionPerformed(ActionEvent e) {
+                opacity += 0.08f;
+                if (opacity >= 1f) {
+                    opacity = 1f;
+                    timer.stop();
+                }
+                dialog.setOpacity(opacity);
+            }
+        });
+        timer.start();
+
+        // Button actions
+        okBtn.addActionListener(e -> {
+            teacher.setTelephone(telField.getText());
+            teacher.setPhoto(selectedPhoto[0]);
+            new TeacherService().updateTeacherProfile(teacher);
+            dialog.dispose();
+            dispose();
+            new EnseignantDashboard(teacher).setVisible(true);
+        });
+        cancelBtn.addActionListener(e -> dialog.dispose());
+
+        dialog.setVisible(true);
+    }
+
+    // Ajoute la méthode pour la modale de saisie de notes
+    private void showNoteEntryDialog(Student student, int coursId, Note existingNote) {
+    JDialog dialog = new JDialog(this, "Saisir les notes de " + student.getNom() + " " + student.getPrenom(), true);
+    dialog.setUndecorated(true);
+    dialog.setSize(370, 340);
+    dialog.setLocationRelativeTo(this);
+
+    // Panel principal avec fond blanc, coins arrondis, ombre
+    JPanel mainPanel = new JPanel() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, true);
+            // Ombre portée
+            g2d.setColor(new Color(0,0,0,30));
+            g2d.fillRoundRect(8, 8, getWidth()-16, getHeight()-16, 28, 28);
+            // Fond blanc
+            g2d.setColor(Color.WHITE);
+            g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 28, 28);
+            g2d.dispose();
+        }
+    };
+    mainPanel.setOpaque(false);
+    mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+    mainPanel.setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+
+    JLabel titre = new JLabel("Saisir les notes de " + student.getNom() + " " + student.getPrenom());
+    titre.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    titre.setForeground(new Color(0, 148, 68)); // EMSI vert
+    titre.setAlignmentX(Component.CENTER_ALIGNMENT);
+    mainPanel.add(titre);
+    mainPanel.add(Box.createVerticalStrut(18));
+
+    // Champs de saisie modernes
+    JTextField ccField = new JTextField(existingNote != null ? String.valueOf(existingNote.getControleContinu()) : "");
+    JTextField examField = new JTextField(existingNote != null ? String.valueOf(existingNote.getExamen()) : "");
+    JTextField tpField = new JTextField(existingNote != null ? String.valueOf(existingNote.getTp()) : "");
+
+    Font fieldFont = new Font("Segoe UI", Font.PLAIN, 15);
+    Color lightGreen = new Color(232, 250, 241);
+
+    for (JTextField field : new JTextField[]{ccField, examField, tpField}) {
+        field.setMaximumSize(new Dimension(220, 36));
+        field.setFont(fieldFont);
+        field.setBackground(lightGreen);
+        field.setForeground(new Color(0, 104, 56));
+        field.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(0, 148, 68), 2, true),
+            BorderFactory.createEmptyBorder(6, 12, 6, 12)
+        ));
+        field.setCaretColor(new Color(0, 148, 68));
+    }
+
+    JLabel ccLabel = new JLabel("Contrôle Continu (obligatoire) :");
+    ccLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+    ccLabel.setForeground(new Color(0, 148, 68));
+    mainPanel.add(ccLabel);
+    mainPanel.add(ccField);
+    mainPanel.add(Box.createVerticalStrut(10));
+
+    JLabel examLabel = new JLabel("Examen (obligatoire) :");
+    examLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+    examLabel.setForeground(new Color(0, 148, 68));
+    mainPanel.add(examLabel);
+    mainPanel.add(examField);
+    mainPanel.add(Box.createVerticalStrut(10));
+
+    JLabel tpLabel = new JLabel("TP/Devoir (facultatif) :");
+    tpLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+    tpLabel.setForeground(new Color(0, 148, 68));
+    mainPanel.add(tpLabel);
+    mainPanel.add(tpField);
+    mainPanel.add(Box.createVerticalStrut(22));
+
+    // Boutons modernes
+    JPanel btnPanel = new JPanel();
+    btnPanel.setOpaque(false);
+    btnPanel.setLayout(new BoxLayout(btnPanel, BoxLayout.X_AXIS));
+    JButton okBtn = new JButton("Valider");
+    okBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+    okBtn.setBackground(new Color(0, 148, 68));
+    okBtn.setForeground(Color.WHITE);
+    okBtn.setFocusPainted(false);
+    okBtn.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2, true));
+    okBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+    okBtn.addMouseListener(new MouseAdapter() {
+        public void mouseEntered(MouseEvent e) { okBtn.setBackground(new Color(0, 104, 56)); }
+        public void mouseExited(MouseEvent e) { okBtn.setBackground(new Color(0, 148, 68)); }
+    });
+    JButton cancelBtn = new JButton("Annuler");
+    cancelBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+    cancelBtn.setBackground(lightGreen);
+    cancelBtn.setForeground(new Color(0, 104, 56));
+    cancelBtn.setFocusPainted(false);
+    cancelBtn.setBorder(BorderFactory.createLineBorder(new Color(0, 148, 68), 2, true));
+    cancelBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+    cancelBtn.addMouseListener(new MouseAdapter() {
+        public void mouseEntered(MouseEvent e) { cancelBtn.setBackground(new Color(0, 148, 68)); cancelBtn.setForeground(Color.WHITE); }
+        public void mouseExited(MouseEvent e) { cancelBtn.setBackground(lightGreen); cancelBtn.setForeground(new Color(0, 104, 56)); }
+    });
+    btnPanel.add(okBtn);
+    btnPanel.add(Box.createHorizontalStrut(18));
+    btnPanel.add(cancelBtn);
+    mainPanel.add(btnPanel);
+
+    // Animation fade-in
+    mainPanel.setOpaque(false);
+    dialog.setContentPane(mainPanel);
+    dialog.setOpacity(0f);
+    Timer timer = new Timer(10, null);
+    timer.addActionListener(new ActionListener() {
+        float opacity = 0f;
+        public void actionPerformed(ActionEvent e) {
+            opacity += 0.08f;
+            if (opacity >= 1f) {
+                opacity = 1f;
+                timer.stop();
+            }
+            dialog.setOpacity(opacity);
+        }
+    });
+    timer.start();
+
+    // Actions des boutons
+    okBtn.addActionListener(e -> {
+        try {
+            double cc = Double.parseDouble(ccField.getText());
+            double exam = Double.parseDouble(examField.getText());
+            double tp = tpField.getText().isEmpty() ? 0.0 : Double.parseDouble(tpField.getText());
+
+            if (cc < 0 || cc > 20 || exam < 0 || exam > 20 || tp < 0 || tp > 20) {
+                JOptionPane.showMessageDialog(dialog, "Les notes doivent être entre 0 et 20.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            double noteFinale = tpField.getText().isEmpty() ? (cc + exam) / 2 : (cc + exam + tp) / 3;
+            String validation = noteFinale >= 10 ? "Validée" : "Non validée";
+
+            Note note = existingNote != null ? existingNote : new Note();
+            note.setEtudiantId(student.getId());
+            note.setCoursId(coursId);
+            note.setControleContinu(cc);
+            note.setExamen(exam);
+            note.setTp(tp);
+            note.setNoteFinale(noteFinale);
+            note.setValidation(validation);
+
+            NoteService noteService = new NoteService();
+            noteService.saveOrUpdateNote(note);
+
+            JOptionPane.showMessageDialog(dialog, "Note enregistrée avec succès.", "Succès", JOptionPane.INFORMATION_MESSAGE);
+            dialog.dispose();
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(dialog, "Veuillez saisir des valeurs numériques valides.", "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
+    });
+    cancelBtn.addActionListener(e -> dialog.dispose());
+
+    dialog.setVisible(true);
+}
+
+    // Modifie ou ajoute une méthode pour la saisie de notes par étudiant
+    private void showGradesEntryPanel() {
+        // Always clear the content panel first
+        contentPanel.removeAll();
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Sélecteur de classe et matière
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.setOpaque(false);
+        JLabel classLabel = new JLabel("Classe : ");
+        classLabel.setFont(SUBTITLE_FONT);
+        TeacherService teacherService = new TeacherService();
+        List<TeacherService.Classe> classes = teacherService.getClassesByTeacherId(currentTeacherId);
+        JComboBox<String> classCombo = new JComboBox<>();
+        for (TeacherService.Classe classe : classes) {
+            classCombo.addItem(classe.getNom());
+        }
+        topPanel.add(classLabel);
+        topPanel.add(classCombo);
+
+        // Sélecteur de matière
+        JLabel courseLabel = new JLabel("Matière : ");
+        courseLabel.setFont(SUBTITLE_FONT);
+        CoursService coursService = new CoursService();
+        JComboBox<String> courseCombo = new JComboBox<>();
+        List<String> matieres = coursService.getMatieresByTeacherId(currentTeacherId);
+        for (String matiere : matieres) {
+            courseCombo.addItem(matiere);
+        }
+        topPanel.add(Box.createHorizontalStrut(20));
+        topPanel.add(courseLabel);
+        topPanel.add(courseCombo);
+
+        panel.add(topPanel, BorderLayout.NORTH);
+
+        // Tableau moderne des étudiants
+        String[] columns = {"Matricule", "Nom", "Prénom"};
+        DefaultTableModel model = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int col) { return false; }
+        };
+        final int[] hoveredRow = {-1};
+        JTable table = new JTable(model) {
+            @Override
+            public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                if (!isRowSelected(row)) {
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(232, 250, 241));
+                } else {
+                    c.setBackground(new Color(0, 148, 68));
+                    c.setForeground(Color.WHITE);
+                }
+                if (row == hoveredRow[0] && !isRowSelected(row)) {
+                    c.setBackground(new Color(200, 240, 210));
+                }
+                c.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+                return c;
+            }
+        };
+        table.setRowHeight(36);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        table.setSelectionBackground(new Color(0, 148, 68));
+        table.setSelectionForeground(Color.WHITE);
+        // Header moderne
+        javax.swing.table.JTableHeader header = table.getTableHeader();
+        header.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        header.setBackground(new Color(0, 148, 68));
+        header.setForeground(Color.WHITE);
+        header.setReorderingAllowed(false);
+        header.setPreferredSize(new Dimension(header.getWidth(), 38));
+        // Effet de survol
+        table.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+            public void mouseMoved(java.awt.event.MouseEvent e) {
+                int row = table.rowAtPoint(e.getPoint());
+                if (row != hoveredRow[0]) {
+                    hoveredRow[0] = row;
+                    table.repaint();
+                }
+            }
+        });
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                hoveredRow[0] = -1;
+                table.repaint();
+            }
+        });
+        // Bordures arrondies et ombre sur le scrollpane
+        JScrollPane scrollPane = new JScrollPane(table) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, true);
+                g2d.setColor(new Color(0,0,0,18));
+                g2d.fillRoundRect(6, 6, getWidth()-12, getHeight()-12, 18, 18);
+                g2d.dispose();
+            }
+        };
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        // Charger les étudiants à la sélection de la classe
+        classCombo.addActionListener(e -> {
+            String selectedClass = (String) classCombo.getSelectedItem();
+            if (selectedClass != null) {
+                model.setRowCount(0);
+                EtudiantService etudiantService = new EtudiantService();
+                List<Student> students = etudiantService.getStudentsByGroupName(selectedClass);
+                for (Student student : students) {
+                    model.addRow(new Object[] {student.getMatricule(), student.getNom(), student.getPrenom()});
+                }
+            }
+        });
+
+        // --- Correction : charger les étudiants de la première classe par défaut ---
+        if (classCombo.getItemCount() > 0) {
+            classCombo.setSelectedIndex(0); // Déclenche l'ActionListener et remplit le tableau
+        }
+
+        // Listener pour ouvrir la modale de saisie de notes
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                int row = table.getSelectedRow();
+                if (row >= 0) {
+                    String selectedClass = (String) classCombo.getSelectedItem();
+                    String selectedMatiere = (String) courseCombo.getSelectedItem();
+                    if (selectedClass == null || selectedMatiere == null) return;
+                    EtudiantService etudiantService = new EtudiantService();
+                    List<Student> students = etudiantService.getStudentsByGroupName(selectedClass);
+                    Student student = students.get(row);
+                    // Récupérer l'ID du cours à partir de l'intitulé
+                    int coursId = coursService.getCoursIdByIntitule(selectedMatiere);
+                    NoteService noteService = new NoteService();
+                    Note note = noteService.getNoteByStudentAndCourse(student.getId(), coursId);
+                    showNoteEntryDialog(student, coursId, note);
+                }
+            }
+        });
+
+        // Ajoute UNIQUEMENT ce panel au contentPanel
+        contentPanel.add(panel, BorderLayout.CENTER);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
 }

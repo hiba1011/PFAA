@@ -17,6 +17,9 @@ public class Teacher extends User {
     /** Numéro de téléphone de l'enseignant */
     private String telephone;
 
+    /** Photo de profil de l'enseignant */
+    private String photo;
+
     /**
      * Constructeur complet pour créer un nouvel enseignant
      *
@@ -36,6 +39,7 @@ public class Teacher extends User {
         this.departement = departement;
         this.specialite = specialite;
         this.telephone = telephone;
+        this.photo = "";
     }
 
     /**
@@ -43,6 +47,7 @@ public class Teacher extends User {
      */
     public Teacher() {
         super(0, "", "", "", "", "TEACHER");
+        this.photo = "";
     }
 
     // Getters and Setters
@@ -93,6 +98,22 @@ public class Teacher extends User {
      */
     public void setSpecialite(String specialite) {
         this.specialite = specialite;
+    }
+
+    /**
+     * Récupère la photo de profil de l'enseignant
+     * @return La photo de profil de l'enseignant
+     */
+    public String getPhoto() {
+        return photo;
+    }
+
+    /**
+     * Définit la photo de profil de l'enseignant
+     * @param photo Nouvelle photo de profil
+     */
+    public void setPhoto(String photo) {
+        this.photo = photo;
     }
 
     /**

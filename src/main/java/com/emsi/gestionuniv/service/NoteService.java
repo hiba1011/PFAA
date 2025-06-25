@@ -201,4 +201,40 @@ public class NoteService {
         }
         return notes;
     }
+
+    public Note getNoteByStudentAndCourse(int etudiantId, int coursId) {
+        Note note = null;
+        String sql = "SELECT n.*, e.nom, e.prenom, c.intitule AS matiere " +
+                "FROM note n " +
+                "JOIN etudiants e ON n.etudiant_id = e.id " +
+                "JOIN cours c ON n.cours_id = c.id " +
+                "WHERE n.etudiant_id = ? AND n.cours_id = ?";
+
+        try (Connection conn = DBConnect.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, etudiantId);
+            ps.setInt(2, coursId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                note = new Note();
+                note.setEtudiantId(rs.getInt("etudiant_id"));
+                note.setCoursId(rs.getInt("cours_id"));
+                note.setControleContinu(rs.getDouble("controle_continu"));
+                note.setExamen(rs.getDouble("examen"));
+                note.setTp(rs.getDouble("tp"));
+                note.setNoteFinale(rs.getDouble("note_finale"));
+                note.setValidation(rs.getString("validation"));
+                note.setNomEtudiant(rs.getString("nom"));
+                note.setPrenomEtudiant(rs.getString("prenom"));
+                note.setMatiere(rs.getString("matiere"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return note;
+    }
+
 }

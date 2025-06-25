@@ -62,6 +62,7 @@ public class TeacherService {
                 teacher.setPassword(rs.getString("mot_de_passe"));
                 teacher.setDepartement(rs.getString("departement"));
                 teacher.setSpecialite(rs.getString("specialite"));
+                teacher.setTelephone(rs.getString("telephone"));
             }
 
         } catch (SQLException e) {
@@ -259,5 +260,27 @@ public class TeacherService {
         }
 
         return classes;
+    }
+
+    /**
+     * Met à jour le profil de l'enseignant (téléphone et photo)
+     */
+    public void updateTeacherProfile(Teacher teacher) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBConnect.getConnection();
+            String sql = "UPDATE gestion_universitaire.enseignants SET telephone = ?, photo = ? WHERE id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, teacher.getTelephone());
+            pstmt.setString(2, teacher.getPhoto());
+            pstmt.setInt(3, teacher.getId());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la mise à jour du profil enseignant : " + e.getMessage());
+            throw new RuntimeException("Erreur lors de la mise à jour du profil enseignant", e);
+        } finally {
+            closeResources(null, pstmt, conn);
+        }
     }
 }
