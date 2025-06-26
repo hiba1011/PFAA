@@ -1,0 +1,7 @@
+1|1|etudiant|1|enseignant|2025-06-26T16:36:23.949738|bonjour
+2|1|enseignant|1|etudiant|2025-06-26T17:03:28.847695900|cc
+3|1|etudiant|1|enseignant|2025-06-26T17:23:08.972734500|au revoir
+4|1|enseignant|1|etudiant|2025-06-26T17:31:04.655928800|bonjour,youssef
+5|1|etudiant|1|enseignant|2025-06-26T17:31:34.019199200|bonjour monsieur,comment allez vous?
+6|1|etudiant|1|enseignant|2025-06-26T17:32:01.210839500|cc ,monsieur
+7|1|enseignant|1|etudiant|2025-06-26T17:32:11.807358400|cc,youssef cv

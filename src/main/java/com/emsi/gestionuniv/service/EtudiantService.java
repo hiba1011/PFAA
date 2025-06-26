@@ -3,13 +3,13 @@ package com.emsi.gestionuniv.service;
 import com.emsi.gestionuniv.config.DBConnect;
 import com.emsi.gestionuniv.model.user.Student;
 import com.emsi.gestionuniv.repository.StudentRepository;
+import com.emsi.gestionuniv.service.TeacherService;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Service gérant les opérations liées aux étudiants :
@@ -319,6 +319,7 @@ public class EtudiantService {
 
     /**
      * Récupère tous les étudiants de la base de données
+     * 
      * @return Liste de tous les étudiants
      */
     public List<Student> getAllStudents() {
@@ -341,5 +342,16 @@ public class EtudiantService {
             closeResources(rs, pstmt, conn);
         }
         return students;
+    }
+
+    public List<Student> getStudentsByTeacherId(int teacherId) {
+        TeacherService teacherService = new TeacherService();
+        List<TeacherService.Classe> classes = teacherService.getClassesByTeacherId(teacherId);
+        Set<Student> studentsSet = new HashSet<>();
+        for (TeacherService.Classe classe : classes) {
+            List<Student> studentsInClass = getStudentsByGroupName(classe.getNom());
+            studentsSet.addAll(studentsInClass);
+        }
+        return new ArrayList<>(studentsSet);
     }
 }

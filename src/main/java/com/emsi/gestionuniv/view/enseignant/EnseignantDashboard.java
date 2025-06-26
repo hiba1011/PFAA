@@ -29,6 +29,9 @@ import javax.swing.table.TableCellRenderer;
 import com.emsi.gestionuniv.model.planning.Emploi_de_temps;
 import com.emsi.gestionuniv.service.EmploiDuTempsService;
 import java.text.DecimalFormat; // Ajoute cet import en haut du fichier
+import java.io.File;
+import com.emsi.gestionuniv.model.academic.Message;
+import com.emsi.gestionuniv.service.MessageService;
 
 import static com.emsi.gestionuniv.view.etudiant.EtudiantDashboard.EMSI_LIGHT_GREEN;
 
@@ -129,30 +132,29 @@ public class EnseignantDashboard extends JFrame {
      * 
      * @return The profile panel.
      */
-  private JPanel createProfilePanel() {
-    JPanel panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-    panel.setBackground(BACKGROUND_WHITE);
-    panel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
+    private JPanel createProfilePanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(BACKGROUND_WHITE);
+        panel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
 
-    JLabel titleLabel = new JLabel("Mon Profil");
-    titleLabel.setFont(TITLE_FONT);
-    titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-    panel.add(titleLabel);
+        JLabel titleLabel = new JLabel("Mon Profil");
+        titleLabel.setFont(TITLE_FONT);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(titleLabel);
 
-    panel.add(Box.createVerticalStrut(40));
+        panel.add(Box.createVerticalStrut(40));
 
-    // Display teacher information
-    addProfileInfo(panel, "Nom Complet:", teacher.getFullName());
-    addProfileInfo(panel, "Email:", teacher.getEmail());
-    addProfileInfo(panel, "Département:", teacher.getDepartement());
-    addProfileInfo(panel, "Spécialité:", teacher.getSpecialite());
+        // Display teacher information
+        addProfileInfo(panel, "Nom Complet:", teacher.getFullName());
+        addProfileInfo(panel, "Email:", teacher.getEmail());
+        addProfileInfo(panel, "Département:", teacher.getDepartement());
+        addProfileInfo(panel, "Spécialité:", teacher.getSpecialite());
 
-    panel.add(Box.createVerticalGlue()); // Push everything to the top
+        panel.add(Box.createVerticalGlue()); // Push everything to the top
 
-
-    return panel;
-}
+        return panel;
+    }
 
     /**
      * Helper method to add a label and value to the profile panel.
@@ -462,8 +464,6 @@ public class EnseignantDashboard extends JFrame {
         sidebarPanel.add(Box.createVerticalStrut(10));
         // --- Fin ajout infos personnelles ---
 
-       
-
         // Menu items avec icônes Unicode
         String[][] menuItems = {
                 { "\uD83C\uDFE0", "Tableau de bord" },
@@ -588,8 +588,6 @@ public class EnseignantDashboard extends JFrame {
         contentPanel.revalidate();
         contentPanel.repaint();
     }
-
-
 
     private void showClassesPanel() {
         contentPanel.removeAll();
@@ -718,9 +716,9 @@ public class EnseignantDashboard extends JFrame {
             }
 
             @Override
-    public boolean isCellEditable(int row, int col) {
-        return col >= 3 && col <= 7; // Seules les colonnes de notes sont éditables
-    }
+            public boolean isCellEditable(int row, int col) {
+                return col >= 3 && col <= 7; // Seules les colonnes de notes sont éditables
+            }
         };
 
         JTable studentsTable = new JTable(model);
@@ -1100,131 +1098,187 @@ public class EnseignantDashboard extends JFrame {
         return courseDetailsPanel;
     }
 
-    private void showMessagesPanel() {
-        contentPanel.removeAll();
-        contentPanel.add(createMessagesPanel());
-        contentPanel.revalidate();
-        contentPanel.repaint();
+private void showMessagesPanel() {
+    contentPanel.removeAll();
+    contentPanel.add(createMessagesPanel());
+    contentPanel.revalidate();
+    contentPanel.repaint();
+}
+
+private JPanel createMessagesPanel() {
+    JPanel panel = new JPanel(new BorderLayout());
+    panel.setBackground(new Color(242, 247, 242));
+
+    EtudiantService etudiantService = new EtudiantService();
+    List<Student> students = etudiantService.getStudentsByTeacherId(currentTeacherId);
+    String[] noms = students.stream().map(s -> s.getPrenom() + " " + s.getNom()).toArray(String[]::new);
+    int[] etudiantIds = students.stream().mapToInt(Student::getId).toArray();
+
+    JComboBox<String> studentCombo = new JComboBox<>(noms);
+    studentCombo.setFont(new Font("Segoe UI", Font.BOLD, 15));
+    studentCombo.setBackground(Color.WHITE);
+    studentCombo.setForeground(EMSI_GREEN);
+    studentCombo.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(EMSI_GREEN, 1, true),
+            new EmptyBorder(10, 18, 10, 18)));
+
+    JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+    topPanel.setOpaque(false);
+    JLabel avatarLabel = new JLabel("👨‍🎓");
+    avatarLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 38));
+    avatarLabel.setBorder(new EmptyBorder(0, 0, 0, 10));
+    JLabel nameLabel = new JLabel(noms.length > 0 ? noms[0] : "");
+    nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    nameLabel.setForeground(EMSI_GREEN);
+    topPanel.add(avatarLabel);
+    topPanel.add(nameLabel);
+    topPanel.add(Box.createHorizontalStrut(30));
+    topPanel.add(studentCombo);
+    topPanel.setBorder(new EmptyBorder(10, 60, 10, 60));
+    panel.add(topPanel, BorderLayout.BEFORE_FIRST_LINE);
+
+    JTextPane messagesArea = new JTextPane();
+    messagesArea.setOpaque(false);
+    messagesArea.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+    messagesArea.setEditable(false);
+    messagesArea.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(EMSI_LIGHT_GREEN, 2, true),
+            new EmptyBorder(18, 18, 18, 18)));
+
+    JScrollPane scrollPane = new JScrollPane(messagesArea);
+    scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 60, 10, 60));
+    scrollPane.setBackground(new Color(245, 255, 245));
+    panel.add(scrollPane, BorderLayout.CENTER);
+
+    MessageService messageService = new MessageService();
+// ...dans createMessagesPanel(), dans le Runnable updateMessages...
+Runnable updateMessages = () -> {
+    messageService.reloadMessages();
+    int idx = studentCombo.getSelectedIndex();
+    if (idx < 0) return;
+    avatarLabel.setText("👨‍🎓");
+    nameLabel.setText(noms[idx]);
+    int etudiantId = etudiantIds[idx];
+    java.util.List<Message> conv = messageService.getConversation(
+        currentTeacherId, "enseignant", etudiantId, "etudiant"
+    );
+    StringBuilder html = new StringBuilder(
+        "<html><body style='font-family:Segoe UI,sans-serif;font-size:15px;background:transparent;'>"
+    );
+    for (Message m : conv) {
+        boolean sentByMe = m.getSenderId() == currentTeacherId && m.getSenderType().equals("enseignant");
+        if (sentByMe) {
+            // Bulle à droite, radius arrondi à droite
+            html.append(
+                "<div style='text-align:right;margin-bottom:14px;'>" +
+                "<span style='background:#009444;border:1.5px solid #009444;color:#fff;padding:10px 22px;" +
+                "border-radius:45px;display:inline-block;max-width:60%;" +
+                "box-shadow:0 2px 8px #b2f2bb33;font-family:Segoe UI,sans-serif;font-size:15px;'>" +
+                m.getContent() + "</span></div>"
+            );
+        } else {
+            // Bulle à gauche, radius arrondi à gauche
+            html.append(
+                "<div style='text-align:left;margin-bottom:14px;'>" +
+                "<span style='background:#f5f5f5;border:1.5px solid #e0e0e0;color:#222;padding:10px 22px;" +
+                "border-radius:45px;display:inline-block;max-width:60%;" +
+                "box-shadow:0 2px 8px #bbb2;font-family:Segoe UI,sans-serif;font-size:15px;'>" +
+                "<b>" + nameLabel.getText() + " :</b> " + m.getContent() + "</span></div>"
+            );
+        }
     }
+    html.append("</body></html>");
+    messagesArea.setContentType("text/html");
+    messagesArea.setText(html.toString());
+    messagesArea.setCaretPosition(messagesArea.getDocument().getLength());
+};
+    studentCombo.addActionListener(e -> updateMessages.run());
+    updateMessages.run();
+    new javax.swing.Timer(2000, e -> updateMessages.run()).start();
 
-    private JPanel createMessagesPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(BACKGROUND_WHITE);
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+    // Zone d'envoi stylée
+    JPanel sendPanel = new JPanel(new BorderLayout(8, 0)) {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setColor(new Color(225, 245, 225, 120));
+            g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+            g2d.dispose();
+        }
+    };
+    sendPanel.setOpaque(false);
+    sendPanel.setBorder(new EmptyBorder(18, 60, 18, 60));
+    JTextField inputField = new JTextField();
+    inputField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+    inputField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(EMSI_GREEN, 1, true),
+            new EmptyBorder(12, 18, 12, 18)));
 
-        // En-tête
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
+    JButton sendBtn = new JButton("Envoyer") {
+        private boolean hovering = false;
+        {
+            setFocusPainted(false);
+            setContentAreaFilled(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            setFont(new Font("Segoe UI", Font.BOLD, 16));
+            setForeground(Color.WHITE);
+            setPreferredSize(new Dimension(120, 44));
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) { hovering = true; repaint(); }
+                @Override
+                public void mouseExited(MouseEvent e) { hovering = false; repaint(); }
+            });
+        }
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            Color base = hovering ? EMSI_DARK_GREEN : EMSI_GREEN;
+            g2.setColor(base);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 22, 22);
+            g2.setColor(Color.WHITE);
+            FontMetrics fm = g2.getFontMetrics();
+            String text = getText();
+            int x = (getWidth() - fm.stringWidth(text)) / 2;
+            int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+            g2.drawString(text, x, y);
+            g2.dispose();
+        }
+    };
 
-        JLabel titleLabel = new JLabel("Messagerie");
-        titleLabel.setFont(TITLE_FONT);
-        titleLabel.setForeground(EMSI_GRAY);
+    sendBtn.addActionListener(e -> {
+        String text = inputField.getText().trim();
+        if (!text.isEmpty()) {
+            int idx = studentCombo.getSelectedIndex();
+            int etudiantId = etudiantIds[idx];
+            Message msg = new Message();
+            msg.setSenderId(currentTeacherId);
+            msg.setSenderType("enseignant");
+            msg.setReceiverId(etudiantId);
+            msg.setReceiverType("etudiant");
+            msg.setContent(text);
+            messageService.sendMessage(msg);
+            inputField.setText("");
+            updateMessages.run();
+        }
+    });
+    inputField.addActionListener(e -> sendBtn.doClick());
 
-        // Bouton nouveau message
-        JButton newMessageButton = new JButton("Nouveau message");
-        newMessageButton.setBackground(EMSI_GREEN);
-        newMessageButton.setForeground(Color.WHITE);
-        newMessageButton.setFont(SUBTITLE_FONT);
+    sendPanel.add(inputField, BorderLayout.CENTER);
+    sendPanel.add(sendBtn, BorderLayout.EAST);
 
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-        headerPanel.add(newMessageButton, BorderLayout.EAST);
+    panel.add(sendPanel, BorderLayout.SOUTH);
 
-        // Panel principal divisé en deux parties
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        splitPane.setDividerLocation(300);
-        splitPane.setDividerSize(1);
-        splitPane.setBackground(BACKGROUND_WHITE);
+    panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createEmptyBorder(10, 10, 10, 10),
+            BorderFactory.createLineBorder(new Color(220, 235, 220), 2, true)));
 
-        // Liste des conversations (gauche)
-        JPanel conversationsPanel = new JPanel(new BorderLayout());
-        conversationsPanel.setBackground(Color.WHITE);
-        conversationsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20));
-
-        // Barre de recherche des conversations
-        JTextField searchField = new JTextField("Rechercher une conversation...");
-        searchField.setPreferredSize(new Dimension(300, 35));
-        searchField.setFont(SUBTITLE_FONT);
-        searchField.setForeground(Color.GRAY);
-
-        // Liste des conversations
-        DefaultListModel<String> conversationsModel = new DefaultListModel<>();
-        conversationsModel.addElement("Mohammed Alaoui - INF101");
-        conversationsModel.addElement("Fatima Benali - INF102");
-        conversationsModel.addElement("Karim Chraibi - INF201");
-        conversationsModel.addElement("Sara Dahmani - INF202");
-        conversationsModel.addElement("Youssef El Fathi - INF301");
-
-        JList<String> conversationsList = new JList<>(conversationsModel);
-        conversationsList.setFont(SUBTITLE_FONT);
-        conversationsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        conversationsList.setFixedCellHeight(50);
-
-        JScrollPane conversationsScrollPane = new JScrollPane(conversationsList);
-        conversationsScrollPane.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
-
-        conversationsPanel.add(searchField, BorderLayout.NORTH);
-        conversationsPanel.add(conversationsScrollPane, BorderLayout.CENTER);
-
-        // Zone de conversation (droite)
-        JPanel chatPanel = new JPanel(new BorderLayout());
-        chatPanel.setBackground(Color.WHITE);
-
-        // En-tête de la conversation
-        JPanel chatHeader = new JPanel(new BorderLayout());
-        chatHeader.setBackground(Color.WHITE);
-        chatHeader.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-
-        JLabel chatTitle = new JLabel("Mohammed Alaoui - INF101");
-        chatTitle.setFont(HEADING_FONT);
-        chatTitle.setForeground(EMSI_GRAY);
-
-        chatHeader.add(chatTitle, BorderLayout.WEST);
-
-        // Zone des messages
-        JPanel messagesPanel = new JPanel();
-        messagesPanel.setLayout(new BoxLayout(messagesPanel, BoxLayout.Y_AXIS));
-        messagesPanel.setBackground(Color.WHITE);
-
-        // Messages d'exemple
-        addMessage(messagesPanel, "Bonjour professeur, j'ai une question concernant le TP de la semaine dernière.",
-                false);
-        addMessage(messagesPanel, "Bonjour Mohammed, je vous écoute.", true);
-        addMessage(messagesPanel, "Je n'ai pas compris la partie sur les collections en Java.", false);
-        addMessage(messagesPanel,
-                "Je peux vous expliquer cela en détail. Les collections en Java sont des structures de données qui permettent de stocker et manipuler des groupes d'objets.",
-                true);
-
-        JScrollPane messagesScrollPane = new JScrollPane(messagesPanel);
-        messagesScrollPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
-
-        // Zone de saisie
-        JPanel inputPanel = new JPanel(new BorderLayout(10, 0));
-        inputPanel.setBackground(Color.WHITE);
-
-        JTextField messageInput = new JTextField();
-        messageInput.setFont(SUBTITLE_FONT);
-        messageInput.setPreferredSize(new Dimension(0, 40));
-
-        JButton sendButton = new JButton("Envoyer");
-        sendButton.setBackground(EMSI_GREEN);
-        sendButton.setForeground(Color.WHITE);
-        sendButton.setFont(SUBTITLE_FONT);
-
-        inputPanel.add(messageInput, BorderLayout.CENTER);
-        inputPanel.add(sendButton, BorderLayout.EAST);
-
-        chatPanel.add(chatHeader, BorderLayout.NORTH);
-        chatPanel.add(messagesScrollPane, BorderLayout.CENTER);
-        chatPanel.add(inputPanel, BorderLayout.SOUTH);
-
-        splitPane.setLeftComponent(conversationsPanel);
-        splitPane.setRightComponent(chatPanel);
-
-        panel.add(headerPanel, BorderLayout.NORTH);
-        panel.add(splitPane, BorderLayout.CENTER);
-
-        return panel;
-    }
+    return panel;
+}
 
     private void addMessage(JPanel panel, String text, boolean isTeacher) {
         JPanel messagePanel = new JPanel(new BorderLayout());
@@ -1572,6 +1626,7 @@ public class EnseignantDashboard extends JFrame {
                         BorderFactory.createLineBorder(new Color(200, 200, 200)),
                         BorderFactory.createEmptyBorder(8, 14, 8, 14)));
             }
+
             @Override
             protected void paintComponent(Graphics g) {
                 if (!isOpaque()) {
@@ -1594,6 +1649,7 @@ public class EnseignantDashboard extends JFrame {
                     searchField.setForeground(Color.BLACK);
                 }
             }
+
             @Override
             public void focusLost(FocusEvent e) {
                 if (searchField.getText().isEmpty()) {
@@ -1639,32 +1695,38 @@ public class EnseignantDashboard extends JFrame {
     }
 
     private JPanel createModernStatPanel(String title, String value, String icon) {
-        final boolean[] hovering = {false};
+        final boolean[] hovering = { false };
+
         JPanel panel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
                 // Fond blanc arrondi
                 g2d.setColor(Color.WHITE);
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 24, 24);
+
                 // Ombre portée
                 if (hovering[0]) {
-                    g2d.setColor(new Color(0,0,0,40));
-                    g2d.fillRoundRect(6, 6, getWidth()-12, getHeight()-12, 24, 24);
+                    g2d.setColor(new Color(0, 0, 0, 40));
+                    g2d.fillRoundRect(6, 6, getWidth() - 12, getHeight() - 12, 24, 24);
                 } else {
-                    g2d.setColor(new Color(0,0,0,18));
-                    g2d.fillRoundRect(8, 8, getWidth()-16, getHeight()-16, 24, 24);
+                    g2d.setColor(new Color(0, 0, 0, 18));
+                    g2d.fillRoundRect(8, 8, getWidth() - 16, getHeight() - 16, 24, 24);
                 }
+
                 g2d.dispose();
             }
         };
+
         panel.setPreferredSize(new Dimension(200, 160));
         panel.setMaximumSize(new Dimension(220, 180));
         panel.setOpaque(false);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
+
         // Hover effect
         panel.addMouseListener(new MouseAdapter() {
             @Override
@@ -1673,34 +1735,47 @@ public class EnseignantDashboard extends JFrame {
                 hovering[0] = true;
                 panel.repaint();
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 panel.setCursor(Cursor.getDefaultCursor());
                 hovering[0] = false;
                 panel.repaint();
             }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (title.equals("Cours")) {
+                     showCoursPdfListPanel();
+                }
+            }
         });
+
         // Icône
         JLabel iconLabel = new JLabel(icon);
         iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 38));
         iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        iconLabel.setBorder(BorderFactory.createEmptyBorder(0,0,8,0));
+        iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+
         // Titre
         JLabel titre = new JLabel(title);
         titre.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        titre.setForeground(EMSI_GREEN);
+        titre.setForeground(EMSI_GREEN); // assure-toi que EMSI_GREEN est défini
         titre.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         // Valeur
         JLabel valeur = new JLabel(value);
         valeur.setFont(new Font("Segoe UI", Font.BOLD, 36));
         valeur.setForeground(new Color(44, 62, 80));
         valeur.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         // Ajout à la carte
         panel.add(iconLabel);
         panel.add(titre);
         panel.add(Box.createVerticalStrut(10));
         panel.add(valeur);
         panel.add(Box.createVerticalGlue());
+
         return panel;
     }
 
@@ -1710,24 +1785,25 @@ public class EnseignantDashboard extends JFrame {
      * @return Panel configuré
      */
     private JPanel createActivitiesPanel() {
-    JPanel panel = new JPanel(new BorderLayout());
-    panel.setBackground(Color.WHITE);
-    panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-    JLabel title = new JLabel("Dernières activités");
-    title.setFont(HEADING_FONT);
-    title.setForeground(EMSI_GRAY);
+        JLabel title = new JLabel("Dernières activités");
+        title.setFont(HEADING_FONT);
+        title.setForeground(EMSI_GRAY);
 
-    JTextArea activities = new JTextArea("Aucune activité récente.");
-    activities.setEditable(false);
-    activities.setBackground(Color.WHITE);
-    activities.setFont(SUBTITLE_FONT);
+        JTextArea activities = new JTextArea("Aucune activité récente.");
+        activities.setEditable(false);
+        activities.setBackground(Color.WHITE);
+        activities.setFont(SUBTITLE_FONT);
 
-    panel.add(title, BorderLayout.NORTH);
-    panel.add(activities, BorderLayout.CENTER);
+        panel.add(title, BorderLayout.NORTH);
+        panel.add(activities, BorderLayout.CENTER);
 
-    return panel;
-}
+        return panel;
+    }
+
     /**
      * Charge une image depuis les ressources
      * 
@@ -1756,13 +1832,13 @@ public class EnseignantDashboard extends JFrame {
             return null;
         }
     }
-    
+
     // Ajoute ceci dans EnseignantDashboard
     private JPanel createCalendarPanel() {
-    JPanel panel = new JPanel();
-    panel.setBackground(Color.WHITE);
-    panel.add(new JLabel("Calendrier à venir..."));
-    return panel;
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.WHITE);
+        panel.add(new JLabel("Calendrier à venir..."));
+        return panel;
     }
 
     // --- Ajout : Méthode de modification du profil enseignant ---
@@ -1772,20 +1848,20 @@ public class EnseignantDashboard extends JFrame {
         dialog.setUndecorated(true);
         dialog.setSize(370, 410);
         dialog.setLocationRelativeTo(this);
-        dialog.setBackground(new Color(0,0,0,0));
+        dialog.setBackground(new Color(0, 0, 0, 0));
 
         // Main panel with EMSI green gradient, rounded corners, drop shadow
         JPanel mainPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, true);
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 GradientPaint gp = new GradientPaint(0, 0, EMSI_GREEN, getWidth(), getHeight(), EMSI_DARK_GREEN);
                 g2d.setPaint(gp);
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 32, 32);
                 // Drop shadow
-                g2d.setColor(new Color(0,0,0,30));
-                g2d.fillRoundRect(8, 8, getWidth()-16, getHeight()-16, 32, 32);
+                g2d.setColor(new Color(0, 0, 0, 30));
+                g2d.fillRoundRect(8, 8, getWidth() - 16, getHeight() - 16, 32, 32);
                 g2d.dispose();
                 super.paintComponent(g);
             }
@@ -1807,8 +1883,8 @@ public class EnseignantDashboard extends JFrame {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, true);
-                g2.setColor(new Color(0,0,0,40));
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(0, 0, 0, 40));
                 g2.fillOval(4, 4, 92, 92); // shadow
                 g2.dispose();
             }
@@ -1828,8 +1904,8 @@ public class EnseignantDashboard extends JFrame {
             photoPreview.setIcon(new ImageIcon(img));
         }
         photoPreview.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.WHITE, 4, true),
-            BorderFactory.createEmptyBorder(3,3,3,3)));
+                BorderFactory.createLineBorder(Color.WHITE, 4, true),
+                BorderFactory.createEmptyBorder(3, 3, 3, 3)));
         photoPreview.setOpaque(false);
         mainPanel.add(photoPreview);
         mainPanel.add(Box.createVerticalStrut(8));
@@ -1845,8 +1921,15 @@ public class EnseignantDashboard extends JFrame {
         choosePhotoBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         final String[] selectedPhoto = { currentPhoto };
         choosePhotoBtn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { choosePhotoBtn.setBackground(EMSI_GREEN); choosePhotoBtn.setForeground(Color.WHITE); }
-            public void mouseExited(MouseEvent e) { choosePhotoBtn.setBackground(EMSI_LIGHT_GREEN); choosePhotoBtn.setForeground(EMSI_DARK_GREEN); }
+            public void mouseEntered(MouseEvent e) {
+                choosePhotoBtn.setBackground(EMSI_GREEN);
+                choosePhotoBtn.setForeground(Color.WHITE);
+            }
+
+            public void mouseExited(MouseEvent e) {
+                choosePhotoBtn.setBackground(EMSI_LIGHT_GREEN);
+                choosePhotoBtn.setForeground(EMSI_DARK_GREEN);
+            }
         });
         choosePhotoBtn.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
@@ -1874,8 +1957,8 @@ public class EnseignantDashboard extends JFrame {
         telField.setBackground(EMSI_LIGHT_GREEN);
         telField.setForeground(EMSI_DARK_GREEN);
         telField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(EMSI_GREEN, 2, true),
-            new EmptyBorder(6, 12, 6, 12)));
+                BorderFactory.createLineBorder(EMSI_GREEN, 2, true),
+                new EmptyBorder(6, 12, 6, 12)));
         telField.setCaretColor(EMSI_GREEN);
         mainPanel.add(telField);
         mainPanel.add(Box.createVerticalStrut(22));
@@ -1892,8 +1975,13 @@ public class EnseignantDashboard extends JFrame {
         okBtn.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2, true));
         okBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         okBtn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { okBtn.setBackground(EMSI_DARK_GREEN); }
-            public void mouseExited(MouseEvent e) { okBtn.setBackground(EMSI_GREEN); }
+            public void mouseEntered(MouseEvent e) {
+                okBtn.setBackground(EMSI_DARK_GREEN);
+            }
+
+            public void mouseExited(MouseEvent e) {
+                okBtn.setBackground(EMSI_GREEN);
+            }
         });
         JButton cancelBtn = new JButton("Annuler");
         cancelBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -1903,8 +1991,15 @@ public class EnseignantDashboard extends JFrame {
         cancelBtn.setBorder(BorderFactory.createLineBorder(EMSI_GREEN, 2, true));
         cancelBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         cancelBtn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { cancelBtn.setBackground(EMSI_GREEN); cancelBtn.setForeground(Color.WHITE); }
-            public void mouseExited(MouseEvent e) { cancelBtn.setBackground(EMSI_LIGHT_GREEN); cancelBtn.setForeground(EMSI_DARK_GREEN); }
+            public void mouseEntered(MouseEvent e) {
+                cancelBtn.setBackground(EMSI_GREEN);
+                cancelBtn.setForeground(Color.WHITE);
+            }
+
+            public void mouseExited(MouseEvent e) {
+                cancelBtn.setBackground(EMSI_LIGHT_GREEN);
+                cancelBtn.setForeground(EMSI_DARK_GREEN);
+            }
         });
         btnPanel.add(okBtn);
         btnPanel.add(Box.createHorizontalStrut(18));
@@ -1918,6 +2013,7 @@ public class EnseignantDashboard extends JFrame {
         Timer timer = new Timer(10, null);
         timer.addActionListener(new ActionListener() {
             float opacity = 0f;
+
             public void actionPerformed(ActionEvent e) {
                 opacity += 0.08f;
                 if (opacity >= 1f) {
@@ -1945,165 +2041,181 @@ public class EnseignantDashboard extends JFrame {
 
     // Ajoute la méthode pour la modale de saisie de notes
     private void showNoteEntryDialog(Student student, int coursId, Note existingNote) {
-    JDialog dialog = new JDialog(this, "Saisir les notes de " + student.getNom() + " " + student.getPrenom(), true);
-    dialog.setUndecorated(true);
-    dialog.setSize(370, 340);
-    dialog.setLocationRelativeTo(this);
+        JDialog dialog = new JDialog(this, "Saisir les notes de " + student.getNom() + " " + student.getPrenom(), true);
+        dialog.setUndecorated(true);
+        dialog.setSize(370, 340);
+        dialog.setLocationRelativeTo(this);
 
-    // Panel principal avec fond blanc, coins arrondis, ombre
-    JPanel mainPanel = new JPanel() {
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2d = (Graphics2D) g.create();
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, true);
-            // Ombre portée
-            g2d.setColor(new Color(0,0,0,30));
-            g2d.fillRoundRect(8, 8, getWidth()-16, getHeight()-16, 28, 28);
-            // Fond blanc
-            g2d.setColor(Color.WHITE);
-            g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 28, 28);
-            g2d.dispose();
+        // Panel principal avec fond blanc, coins arrondis, ombre
+        JPanel mainPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                // Ombre portée
+                g2d.setColor(new Color(0, 0, 0, 30));
+                g2d.fillRoundRect(8, 8, getWidth() - 16, getHeight() - 16, 28, 28);
+                // Fond blanc
+                g2d.setColor(Color.WHITE);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 28, 28);
+                g2d.dispose();
+            }
+        };
+        mainPanel.setOpaque(false);
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+
+        JLabel titre = new JLabel("Saisir les notes de " + student.getNom() + " " + student.getPrenom());
+        titre.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titre.setForeground(new Color(0, 148, 68)); // EMSI vert
+        titre.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(titre);
+        mainPanel.add(Box.createVerticalStrut(18));
+
+        // Champs de saisie modernes
+        JTextField ccField = new JTextField(
+                existingNote != null ? String.valueOf(existingNote.getControleContinu()) : "");
+        JTextField examField = new JTextField(existingNote != null ? String.valueOf(existingNote.getExamen()) : "");
+        JTextField tpField = new JTextField(existingNote != null ? String.valueOf(existingNote.getTp()) : "");
+
+        Font fieldFont = new Font("Segoe UI", Font.PLAIN, 15);
+        Color lightGreen = new Color(232, 250, 241);
+
+        for (JTextField field : new JTextField[] { ccField, examField, tpField }) {
+            field.setMaximumSize(new Dimension(220, 36));
+            field.setFont(fieldFont);
+            field.setBackground(lightGreen);
+            field.setForeground(new Color(0, 104, 56));
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(0, 148, 68), 2, true),
+                    BorderFactory.createEmptyBorder(6, 12, 6, 12)));
+            field.setCaretColor(new Color(0, 148, 68));
         }
-    };
-    mainPanel.setOpaque(false);
-    mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-    mainPanel.setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
 
-    JLabel titre = new JLabel("Saisir les notes de " + student.getNom() + " " + student.getPrenom());
-    titre.setFont(new Font("Segoe UI", Font.BOLD, 18));
-    titre.setForeground(new Color(0, 148, 68)); // EMSI vert
-    titre.setAlignmentX(Component.CENTER_ALIGNMENT);
-    mainPanel.add(titre);
-    mainPanel.add(Box.createVerticalStrut(18));
+        JLabel ccLabel = new JLabel("Contrôle Continu (obligatoire) :");
+        ccLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        ccLabel.setForeground(new Color(0, 148, 68));
+        mainPanel.add(ccLabel);
+        mainPanel.add(ccField);
+        mainPanel.add(Box.createVerticalStrut(10));
 
-    // Champs de saisie modernes
-    JTextField ccField = new JTextField(existingNote != null ? String.valueOf(existingNote.getControleContinu()) : "");
-    JTextField examField = new JTextField(existingNote != null ? String.valueOf(existingNote.getExamen()) : "");
-    JTextField tpField = new JTextField(existingNote != null ? String.valueOf(existingNote.getTp()) : "");
+        JLabel examLabel = new JLabel("Examen (obligatoire) :");
+        examLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        examLabel.setForeground(new Color(0, 148, 68));
+        mainPanel.add(examLabel);
+        mainPanel.add(examField);
+        mainPanel.add(Box.createVerticalStrut(10));
 
-    Font fieldFont = new Font("Segoe UI", Font.PLAIN, 15);
-    Color lightGreen = new Color(232, 250, 241);
+        JLabel tpLabel = new JLabel("TP/Devoir (facultatif) :");
+        tpLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        tpLabel.setForeground(new Color(0, 148, 68));
+        mainPanel.add(tpLabel);
+        mainPanel.add(tpField);
+        mainPanel.add(Box.createVerticalStrut(22));
 
-    for (JTextField field : new JTextField[]{ccField, examField, tpField}) {
-        field.setMaximumSize(new Dimension(220, 36));
-        field.setFont(fieldFont);
-        field.setBackground(lightGreen);
-        field.setForeground(new Color(0, 104, 56));
-        field.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(0, 148, 68), 2, true),
-            BorderFactory.createEmptyBorder(6, 12, 6, 12)
-        ));
-        field.setCaretColor(new Color(0, 148, 68));
+        // Boutons modernes
+        JPanel btnPanel = new JPanel();
+        btnPanel.setOpaque(false);
+        btnPanel.setLayout(new BoxLayout(btnPanel, BoxLayout.X_AXIS));
+        JButton okBtn = new JButton("Valider");
+        okBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        okBtn.setBackground(new Color(0, 148, 68));
+        okBtn.setForeground(Color.WHITE);
+        okBtn.setFocusPainted(false);
+        okBtn.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2, true));
+        okBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        okBtn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                okBtn.setBackground(new Color(0, 104, 56));
+            }
+
+            public void mouseExited(MouseEvent e) {
+                okBtn.setBackground(new Color(0, 148, 68));
+            }
+        });
+        JButton cancelBtn = new JButton("Annuler");
+        cancelBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        cancelBtn.setBackground(lightGreen);
+        cancelBtn.setForeground(new Color(0, 104, 56));
+        cancelBtn.setFocusPainted(false);
+        cancelBtn.setBorder(BorderFactory.createLineBorder(new Color(0, 148, 68), 2, true));
+        cancelBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        cancelBtn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                cancelBtn.setBackground(new Color(0, 148, 68));
+                cancelBtn.setForeground(Color.WHITE);
+            }
+
+            public void mouseExited(MouseEvent e) {
+                cancelBtn.setBackground(lightGreen);
+                cancelBtn.setForeground(new Color(0, 104, 56));
+            }
+        });
+        btnPanel.add(okBtn);
+        btnPanel.add(Box.createHorizontalStrut(18));
+        btnPanel.add(cancelBtn);
+        mainPanel.add(btnPanel);
+
+        // Animation fade-in
+        mainPanel.setOpaque(false);
+        dialog.setContentPane(mainPanel);
+        dialog.setOpacity(0f);
+        Timer timer = new Timer(10, null);
+        timer.addActionListener(new ActionListener() {
+            float opacity = 0f;
+
+            public void actionPerformed(ActionEvent e) {
+                opacity += 0.08f;
+                if (opacity >= 1f) {
+                    opacity = 1f;
+                    timer.stop();
+                }
+                dialog.setOpacity(opacity);
+            }
+        });
+        timer.start();
+
+        // Actions des boutons
+        okBtn.addActionListener(e -> {
+            try {
+                double cc = Double.parseDouble(ccField.getText());
+                double exam = Double.parseDouble(examField.getText());
+                double tp = tpField.getText().isEmpty() ? 0.0 : Double.parseDouble(tpField.getText());
+
+                if (cc < 0 || cc > 20 || exam < 0 || exam > 20 || tp < 0 || tp > 20) {
+                    JOptionPane.showMessageDialog(dialog, "Les notes doivent être entre 0 et 20.", "Erreur",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                double noteFinale = tpField.getText().isEmpty() ? (cc + exam) / 2 : (cc + exam + tp) / 3;
+                String validation = noteFinale >= 10 ? "Validée" : "Non validée";
+
+                Note note = existingNote != null ? existingNote : new Note();
+                note.setEtudiantId(student.getId());
+                note.setCoursId(coursId);
+                note.setControleContinu(cc);
+                note.setExamen(exam);
+                note.setTp(tp);
+                note.setNoteFinale(noteFinale);
+                note.setValidation(validation);
+
+                NoteService noteService = new NoteService();
+                noteService.saveOrUpdateNote(note);
+
+                JOptionPane.showMessageDialog(dialog, "Note enregistrée avec succès.", "Succès",
+                        JOptionPane.INFORMATION_MESSAGE);
+                dialog.dispose();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog, "Veuillez saisir des valeurs numériques valides.", "Erreur",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        cancelBtn.addActionListener(e -> dialog.dispose());
+
+        dialog.setVisible(true);
     }
-
-    JLabel ccLabel = new JLabel("Contrôle Continu (obligatoire) :");
-    ccLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-    ccLabel.setForeground(new Color(0, 148, 68));
-    mainPanel.add(ccLabel);
-    mainPanel.add(ccField);
-    mainPanel.add(Box.createVerticalStrut(10));
-
-    JLabel examLabel = new JLabel("Examen (obligatoire) :");
-    examLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-    examLabel.setForeground(new Color(0, 148, 68));
-    mainPanel.add(examLabel);
-    mainPanel.add(examField);
-    mainPanel.add(Box.createVerticalStrut(10));
-
-    JLabel tpLabel = new JLabel("TP/Devoir (facultatif) :");
-    tpLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-    tpLabel.setForeground(new Color(0, 148, 68));
-    mainPanel.add(tpLabel);
-    mainPanel.add(tpField);
-    mainPanel.add(Box.createVerticalStrut(22));
-
-    // Boutons modernes
-    JPanel btnPanel = new JPanel();
-    btnPanel.setOpaque(false);
-    btnPanel.setLayout(new BoxLayout(btnPanel, BoxLayout.X_AXIS));
-    JButton okBtn = new JButton("Valider");
-    okBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-    okBtn.setBackground(new Color(0, 148, 68));
-    okBtn.setForeground(Color.WHITE);
-    okBtn.setFocusPainted(false);
-    okBtn.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2, true));
-    okBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-    okBtn.addMouseListener(new MouseAdapter() {
-        public void mouseEntered(MouseEvent e) { okBtn.setBackground(new Color(0, 104, 56)); }
-        public void mouseExited(MouseEvent e) { okBtn.setBackground(new Color(0, 148, 68)); }
-    });
-    JButton cancelBtn = new JButton("Annuler");
-    cancelBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-    cancelBtn.setBackground(lightGreen);
-    cancelBtn.setForeground(new Color(0, 104, 56));
-    cancelBtn.setFocusPainted(false);
-    cancelBtn.setBorder(BorderFactory.createLineBorder(new Color(0, 148, 68), 2, true));
-    cancelBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-    cancelBtn.addMouseListener(new MouseAdapter() {
-        public void mouseEntered(MouseEvent e) { cancelBtn.setBackground(new Color(0, 148, 68)); cancelBtn.setForeground(Color.WHITE); }
-        public void mouseExited(MouseEvent e) { cancelBtn.setBackground(lightGreen); cancelBtn.setForeground(new Color(0, 104, 56)); }
-    });
-    btnPanel.add(okBtn);
-    btnPanel.add(Box.createHorizontalStrut(18));
-    btnPanel.add(cancelBtn);
-    mainPanel.add(btnPanel);
-
-    // Animation fade-in
-    mainPanel.setOpaque(false);
-    dialog.setContentPane(mainPanel);
-    dialog.setOpacity(0f);
-    Timer timer = new Timer(10, null);
-    timer.addActionListener(new ActionListener() {
-        float opacity = 0f;
-        public void actionPerformed(ActionEvent e) {
-            opacity += 0.08f;
-            if (opacity >= 1f) {
-                opacity = 1f;
-                timer.stop();
-            }
-            dialog.setOpacity(opacity);
-        }
-    });
-    timer.start();
-
-    // Actions des boutons
-    okBtn.addActionListener(e -> {
-        try {
-            double cc = Double.parseDouble(ccField.getText());
-            double exam = Double.parseDouble(examField.getText());
-            double tp = tpField.getText().isEmpty() ? 0.0 : Double.parseDouble(tpField.getText());
-
-            if (cc < 0 || cc > 20 || exam < 0 || exam > 20 || tp < 0 || tp > 20) {
-                JOptionPane.showMessageDialog(dialog, "Les notes doivent être entre 0 et 20.", "Erreur", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            double noteFinale = tpField.getText().isEmpty() ? (cc + exam) / 2 : (cc + exam + tp) / 3;
-            String validation = noteFinale >= 10 ? "Validée" : "Non validée";
-
-            Note note = existingNote != null ? existingNote : new Note();
-            note.setEtudiantId(student.getId());
-            note.setCoursId(coursId);
-            note.setControleContinu(cc);
-            note.setExamen(exam);
-            note.setTp(tp);
-            note.setNoteFinale(noteFinale);
-            note.setValidation(validation);
-
-            NoteService noteService = new NoteService();
-            noteService.saveOrUpdateNote(note);
-
-            JOptionPane.showMessageDialog(dialog, "Note enregistrée avec succès.", "Succès", JOptionPane.INFORMATION_MESSAGE);
-            dialog.dispose();
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(dialog, "Veuillez saisir des valeurs numériques valides.", "Erreur", JOptionPane.ERROR_MESSAGE);
-        }
-    });
-    cancelBtn.addActionListener(e -> dialog.dispose());
-
-    dialog.setVisible(true);
-}
 
     // Modifie ou ajoute une méthode pour la saisie de notes par étudiant
     private void showGradesEntryPanel() {
@@ -2143,12 +2255,14 @@ public class EnseignantDashboard extends JFrame {
         panel.add(topPanel, BorderLayout.NORTH);
 
         // Tableau moderne des étudiants
-        String[] columns = {"Matricule", "Nom", "Prénom"};
+        String[] columns = { "Matricule", "Nom", "Prénom" };
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int col) { return false; }
+            public boolean isCellEditable(int row, int col) {
+                return false;
+            }
         };
-        final int[] hoveredRow = {-1};
+        final int[] hoveredRow = { -1 };
         JTable table = new JTable(model) {
             @Override
             public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
@@ -2199,9 +2313,9 @@ public class EnseignantDashboard extends JFrame {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, true);
-                g2d.setColor(new Color(0,0,0,18));
-                g2d.fillRoundRect(6, 6, getWidth()-12, getHeight()-12, 18, 18);
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(new Color(0, 0, 0, 18));
+                g2d.fillRoundRect(6, 6, getWidth() - 12, getHeight() - 12, 18, 18);
                 g2d.dispose();
             }
         };
@@ -2218,7 +2332,7 @@ public class EnseignantDashboard extends JFrame {
                 EtudiantService etudiantService = new EtudiantService();
                 List<Student> students = etudiantService.getStudentsByGroupName(selectedClass);
                 for (Student student : students) {
-                    model.addRow(new Object[] {student.getMatricule(), student.getNom(), student.getPrenom()});
+                    model.addRow(new Object[] { student.getMatricule(), student.getNom(), student.getPrenom() });
                 }
             }
         });
@@ -2235,7 +2349,8 @@ public class EnseignantDashboard extends JFrame {
                 if (row >= 0) {
                     String selectedClass = (String) classCombo.getSelectedItem();
                     String selectedMatiere = (String) courseCombo.getSelectedItem();
-                    if (selectedClass == null || selectedMatiere == null) return;
+                    if (selectedClass == null || selectedMatiere == null)
+                        return;
                     EtudiantService etudiantService = new EtudiantService();
                     List<Student> students = etudiantService.getStudentsByGroupName(selectedClass);
                     Student student = students.get(row);
@@ -2250,6 +2365,494 @@ public class EnseignantDashboard extends JFrame {
 
         // Ajoute UNIQUEMENT ce panel au contentPanel
         contentPanel.add(panel, BorderLayout.CENTER);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+private void showCoursPdfListPanel() {
+    contentPanel.removeAll();
+    JPanel panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setBackground(new Color(245, 250, 245));
+    panel.setBorder(BorderFactory.createEmptyBorder(40, 80, 40, 80));
+
+    JLabel title = new JLabel("Mes cours PDF déposés");
+    title.setFont(new Font("Segoe UI", Font.BOLD, 26));
+    title.setForeground(EMSI_GREEN);
+    title.setAlignmentX(Component.CENTER_ALIGNMENT);
+    panel.add(title);
+    panel.add(Box.createVerticalStrut(24));
+
+    // Bouton flottant d'ajout (style Material)
+    JButton addBtn = new JButton("+") {
+        private boolean hovering = false;
+        {
+            setFocusPainted(false);
+            setContentAreaFilled(false);
+            setBorderPainted(false);
+            setOpaque(false);
+            setFont(new Font("Segoe UI", Font.BOLD, 32));
+            setForeground(Color.WHITE);
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) { hovering = true; repaint(); }
+                @Override
+                public void mouseExited(MouseEvent e) { hovering = false; repaint(); }
+            });
+        }
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            Color base = hovering ? EMSI_DARK_GREEN : EMSI_GREEN;
+            g2.setColor(base);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 32, 32);
+            g2.setColor(Color.WHITE);
+            FontMetrics fm = g2.getFontMetrics();
+            String text = getText();
+            int x = (getWidth() - fm.stringWidth(text)) / 2;
+            int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+            g2.drawString(text, x, y);
+            g2.dispose();
+        }
+    };
+    addBtn.setPreferredSize(new Dimension(54, 54));
+    addBtn.setMaximumSize(new Dimension(54, 54));
+    addBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+    addBtn.setToolTipText("Ajouter un cours PDF");
+    addBtn.addActionListener(e -> showAddPdfPanel());
+
+    JPanel addBtnPanel = new JPanel();
+    addBtnPanel.setOpaque(false);
+    addBtnPanel.setLayout(new BoxLayout(addBtnPanel, BoxLayout.X_AXIS));
+    addBtnPanel.add(Box.createHorizontalGlue());
+    addBtnPanel.add(addBtn);
+    addBtnPanel.add(Box.createHorizontalGlue());
+    panel.add(addBtnPanel);
+    panel.add(Box.createVerticalStrut(18));
+
+    // Liste des PDF
+    List<com.emsi.gestionuniv.model.academic.CoursPdf> pdfs = new com.emsi.gestionuniv.service.CoursPdfService()
+            .getCoursPdfByEnseignant(currentTeacherId);
+
+    if (pdfs.isEmpty()) {
+        JLabel emptyLabel = new JLabel("Aucun cours PDF déposé.");
+        emptyLabel.setFont(new Font("Segoe UI", Font.ITALIC, 16));
+        emptyLabel.setForeground(EMSI_GRAY);
+        emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(emptyLabel);
+    } else {
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setOpaque(false);
+
+        for (com.emsi.gestionuniv.model.academic.CoursPdf pdf : pdfs) {
+            JPanel card = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    // Ombre légère
+                    g2.setColor(new Color(0, 0, 0, 18));
+                    g2.fillRoundRect(6, 6, getWidth() - 12, getHeight() - 12, 24, 24);
+                    // Fond blanc arrondi
+                    g2.setColor(Color.WHITE);
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 24, 24);
+                    g2.dispose();
+                }
+            };
+            card.setLayout(new BorderLayout(18, 0));
+            card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+            card.setPreferredSize(new Dimension(700, 70));
+            card.setBorder(BorderFactory.createEmptyBorder(10, 24, 10, 24));
+            card.setOpaque(false);
+
+            // Effet hover
+            card.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    card.setBackground(new Color(240, 255, 240));
+                    card.repaint();
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    card.setBackground(Color.WHITE);
+                    card.repaint();
+                }
+            });
+
+            // Icône PDF
+            JLabel icon = new JLabel("\uD83D\uDCC4");
+            icon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
+            icon.setForeground(EMSI_GREEN);
+            icon.setBorder(new EmptyBorder(0, 0, 0, 12));
+
+            // Infos PDF
+            JPanel infoPanel = new JPanel();
+            infoPanel.setOpaque(false);
+            infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+            JLabel titreLbl = new JLabel(pdf.getTitre());
+            titreLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            titreLbl.setForeground(EMSI_DARK_GREEN);
+            JLabel classeLbl = new JLabel("Classe : " + pdf.getClasse());
+            classeLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            classeLbl.setForeground(EMSI_GRAY);
+            infoPanel.add(titreLbl);
+            infoPanel.add(classeLbl);
+
+            // Panel boutons
+            JPanel btnPanel = new JPanel();
+            btnPanel.setOpaque(false);
+            btnPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+
+            // Bouton vert arrondi
+            JButton openBtn = new JButton("Ouvrir") {
+                private boolean hovering = false;
+                {
+                    setFocusPainted(false);
+                    setContentAreaFilled(false);
+                    setBorderPainted(false);
+                    setOpaque(false);
+                    setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                    setFont(new Font("Segoe UI", Font.BOLD, 14));
+                    setForeground(Color.WHITE);
+                    addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseEntered(MouseEvent e) {
+                            hovering = true;
+                            repaint();
+                        }
+
+                        @Override
+                        public void mouseExited(MouseEvent e) {
+                            hovering = false;
+                            repaint();
+                        }
+                    });
+                }
+
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    Color base = hovering ? EMSI_DARK_GREEN : EMSI_GREEN;
+                    g2.setColor(base);
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 22, 22);
+                    g2.setColor(Color.WHITE);
+                    FontMetrics fm = g2.getFontMetrics();
+                    String text = getText();
+                    int x = (getWidth() - fm.stringWidth(text)) / 2;
+                    int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                    g2.drawString(text, x, y);
+                    g2.dispose();
+                }
+            };
+            openBtn.setPreferredSize(new Dimension(100, 36));
+            openBtn.setMaximumSize(new Dimension(100, 36));
+            openBtn.addActionListener(ev -> {
+                try {
+                    Desktop.getDesktop().open(new File(pdf.getCheminPdf()));
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(panel, "Impossible d'ouvrir le PDF.");
+                }
+            });
+
+            // Bouton rouge arrondi pour supprimer
+            JButton deleteBtn = new JButton("Supprimer") {
+                private boolean hovering = false;
+                {
+                    setFocusPainted(false);
+                    setContentAreaFilled(false);
+                    setBorderPainted(false);
+                    setOpaque(false);
+                    setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                    setFont(new Font("Segoe UI", Font.BOLD, 14));
+                    setForeground(Color.WHITE);
+                    addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseEntered(MouseEvent e) {
+                            hovering = true;
+                            repaint();
+                        }
+
+                        @Override
+                        public void mouseExited(MouseEvent e) {
+                            hovering = false;
+                            repaint();
+                        }
+                    });
+                }
+
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    Color base = hovering ? new Color(180, 0, 0) : new Color(220, 0, 0);
+                    g2.setColor(base);
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 22, 22);
+                    g2.setColor(Color.WHITE);
+                    FontMetrics fm = g2.getFontMetrics();
+                    String text = getText();
+                    int x = (getWidth() - fm.stringWidth(text)) / 2;
+                    int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                    g2.drawString(text, x, y);
+                    g2.dispose();
+                }
+            };
+            deleteBtn.setPreferredSize(new Dimension(110, 36));
+            deleteBtn.setMaximumSize(new Dimension(110, 36));
+            deleteBtn.addActionListener(ev -> {
+                int confirm = JOptionPane.showConfirmDialog(panel, "Supprimer ce PDF ?", "Confirmation",
+                        JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    new com.emsi.gestionuniv.service.CoursPdfService().deleteCoursPdf(pdf.getId());
+                    showCoursPdfListPanel(); // Refresh list
+                }
+            });
+
+            btnPanel.add(openBtn);
+            btnPanel.add(deleteBtn);
+
+            card.add(icon, BorderLayout.WEST);
+            card.add(infoPanel, BorderLayout.CENTER);
+            card.add(btnPanel, BorderLayout.EAST);
+
+            listPanel.add(card);
+            listPanel.add(Box.createVerticalStrut(14));
+        }
+        JScrollPane scroll = new JScrollPane(listPanel);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.setBackground(new Color(245, 250, 245));
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        panel.add(scroll);
+    }
+
+    panel.add(Box.createVerticalGlue());
+
+    contentPanel.removeAll();
+    contentPanel.add(panel, BorderLayout.CENTER);
+    contentPanel.revalidate();
+    contentPanel.repaint();
+}
+
+    private void showAddPdfPanel() {
+        contentPanel.removeAll();
+
+        JPanel card = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                // Ombre douce
+                g2d.setColor(new Color(0, 0, 0, 18));
+                g2d.fillRoundRect(8, 8, getWidth() - 16, getHeight() - 16, 32, 32);
+                // Fond blanc arrondi
+                g2d.setColor(Color.WHITE);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 32, 32);
+                g2d.dispose();
+            }
+        };
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(BorderFactory.createEmptyBorder(38, 48, 38, 48));
+        card.setMaximumSize(new Dimension(480, 420));
+        card.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.setAlignmentY(Component.CENTER_ALIGNMENT);
+        card.setOpaque(false);
+
+        JLabel title = new JLabel("Ajouter un cours PDF");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        title.setForeground(EMSI_GREEN);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.add(title);
+        card.add(Box.createVerticalStrut(28));
+
+        // Champ titre
+        JLabel titreLbl = new JLabel("Titre du cours :");
+        titreLbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        titreLbl.setForeground(EMSI_DARK_GREEN);
+        titreLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.add(titreLbl);
+
+        JTextField titreField = new JTextField();
+        titreField.setMaximumSize(new Dimension(400, 36));
+        titreField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        titreField.setBackground(new Color(232, 250, 241));
+        titreField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(EMSI_GREEN, 2, true),
+                new EmptyBorder(8, 14, 8, 14)));
+        titreField.setCaretColor(EMSI_GREEN);
+        card.add(titreField);
+        card.add(Box.createVerticalStrut(16));
+
+        // Sélecteur de classe
+        JLabel classeLbl = new JLabel("Classe :");
+        classeLbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        classeLbl.setForeground(EMSI_DARK_GREEN);
+        classeLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.add(classeLbl);
+
+        TeacherService teacherService = new TeacherService();
+        List<TeacherService.Classe> classes = teacherService.getClassesByTeacherId(currentTeacherId);
+        JComboBox<String> classCombo = new JComboBox<>();
+        for (TeacherService.Classe c : classes)
+            classCombo.addItem(c.getNom());
+        classCombo.setMaximumSize(new Dimension(400, 36));
+        classCombo.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        classCombo.setBackground(new Color(232, 250, 241));
+        classCombo.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(EMSI_GREEN, 2, true),
+                new EmptyBorder(4, 10, 4, 10)));
+        card.add(classCombo);
+        card.add(Box.createVerticalStrut(16));
+
+        // Sélecteur de fichier PDF
+        JLabel fileLbl = new JLabel("Fichier PDF :");
+        fileLbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        fileLbl.setForeground(EMSI_DARK_GREEN);
+        fileLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.add(fileLbl);
+
+        JLabel fileLabel = new JLabel("Aucun fichier sélectionné");
+        fileLabel.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+        fileLabel.setForeground(EMSI_GRAY);
+        fileLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        final File[] selectedFile = { null };
+        JButton chooseBtn = new JButton("Choisir un fichier PDF") {
+            private boolean hovering = false;
+            {
+                setFocusPainted(false);
+                setContentAreaFilled(false);
+                setBorderPainted(false);
+                setOpaque(false);
+                setFont(new Font("Segoe UI", Font.BOLD, 15));
+                setForeground(Color.WHITE);
+                setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                addMouseListener(new MouseAdapter() {
+                    public void mouseEntered(MouseEvent e) {
+                        hovering = true;
+                        repaint();
+                    }
+
+                    public void mouseExited(MouseEvent e) {
+                        hovering = false;
+                        repaint();
+                    }
+                });
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color base = hovering ? EMSI_DARK_GREEN : EMSI_GREEN;
+                g2.setColor(base);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 22, 22);
+                g2.setColor(Color.WHITE);
+                FontMetrics fm = g2.getFontMetrics();
+                String text = getText();
+                int x = (getWidth() - fm.stringWidth(text)) / 2;
+                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                g2.drawString(text, x, y);
+                g2.dispose();
+            }
+        };
+        chooseBtn.setPreferredSize(new Dimension(220, 38));
+        chooseBtn.setMaximumSize(new Dimension(220, 38));
+        chooseBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        chooseBtn.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("PDF Documents", "pdf"));
+            if (fileChooser.showOpenDialog(card) == JFileChooser.APPROVE_OPTION) {
+                selectedFile[0] = fileChooser.getSelectedFile();
+                fileLabel.setText(selectedFile[0].getName());
+            }
+        });
+        card.add(chooseBtn);
+        card.add(Box.createVerticalStrut(6));
+        card.add(fileLabel);
+        card.add(Box.createVerticalStrut(24));
+
+        // Bouton d'ajout stylé
+        JButton addBtn = new JButton("Ajouter le cours PDF") {
+            private boolean hovering = false;
+            {
+                setFocusPainted(false);
+                setContentAreaFilled(false);
+                setBorderPainted(false);
+                setOpaque(false);
+                setFont(new Font("Segoe UI", Font.BOLD, 16));
+                setForeground(Color.WHITE);
+                setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                addMouseListener(new MouseAdapter() {
+                    public void mouseEntered(MouseEvent e) {
+                        hovering = true;
+                        repaint();
+                    }
+
+                    public void mouseExited(MouseEvent e) {
+                        hovering = false;
+                        repaint();
+                    }
+                });
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color base = hovering ? EMSI_DARK_GREEN : EMSI_GREEN;
+                g2.setColor(base);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 22, 22);
+                g2.setColor(Color.WHITE);
+                FontMetrics fm = g2.getFontMetrics();
+                String text = getText();
+                int x = (getWidth() - fm.stringWidth(text)) / 2;
+                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                g2.drawString(text, x, y);
+                g2.dispose();
+            }
+        };
+        addBtn.setPreferredSize(new Dimension(220, 44));
+        addBtn.setMaximumSize(new Dimension(220, 44));
+        addBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        addBtn.addActionListener(e -> {
+            String titre = titreField.getText().trim();
+            String classe = (String) classCombo.getSelectedItem();
+            if (titre.isEmpty() || selectedFile[0] == null || classe == null) {
+                JOptionPane.showMessageDialog(card, "Veuillez remplir tous les champs et choisir un PDF.");
+                return;
+            }
+            try {
+                File destDir = new File("pdfs");
+                if (!destDir.exists())
+                    destDir.mkdir();
+                File dest = new File(destDir, selectedFile[0].getName());
+                java.nio.file.Files.copy(selectedFile[0].toPath(), dest.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                new com.emsi.gestionuniv.service.CoursPdfService().ajouterCoursPdf(titre, dest.getAbsolutePath(),
+                        currentTeacherId, classe);
+                JOptionPane.showMessageDialog(card, "Cours PDF ajouté !");
+                showCoursPdfListPanel(); // Retour à la liste
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(card, "Erreur lors de la copie du fichier PDF.");
+            }
+        });
+        card.add(addBtn);
+
+        // Centrage vertical/horizontal
+        JPanel wrapper = new JPanel();
+        wrapper.setLayout(new GridBagLayout());
+        wrapper.setOpaque(false);
+        wrapper.add(card);
+
+        contentPanel.removeAll();
+        contentPanel.add(wrapper, BorderLayout.CENTER);
         contentPanel.revalidate();
         contentPanel.repaint();
     }
