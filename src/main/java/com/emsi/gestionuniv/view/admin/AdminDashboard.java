@@ -8,6 +8,14 @@ import java.awt.event.*;
 import com.emsi.gestionuniv.app.MainApplication;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.SQLException;
+import java.util.stream.Collectors;
+import com.emsi.gestionuniv.service.EtudiantService;
+import com.emsi.gestionuniv.service.TeacherService;
+import com.emsi.gestionuniv.service.CoursService;
+import com.emsi.gestionuniv.model.user.Student;
+import com.emsi.gestionuniv.model.user.Teacher;
+import com.emsi.gestionuniv.model.academic.cours;
 
 /**
  * Tableau de bord administrateur avec un style moderne inspiré du dashboard enseignant.
@@ -32,6 +40,11 @@ public class AdminDashboard extends JFrame {
     private CardLayout cardLayout;
     private JPanel cardPanel;
     private List<JButton> menuButtons = new ArrayList<>();
+    private JTable studentsTable;
+    private DefaultTableModel studentsTableModel;
+    private JTextField photoField;
+    private JButton choosePhotoButton;
+    private String selectedPhotoPath = "";
 
     public AdminDashboard(String username) {
         if (!"admin".equals(username)) {
@@ -129,15 +142,9 @@ public class AdminDashboard extends JFrame {
             new com.emsi.gestionuniv.view.Login.AdminLogin();
         });
 
-        JLabel titleLabel = new JLabel("Système de Gestion Universitaire - Administration");
-        titleLabel.setFont(TITLE_FONT);
-        titleLabel.setForeground(Color.WHITE);
-
         JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         leftPanel.setOpaque(false);
         leftPanel.add(backButton);
-        leftPanel.add(Box.createHorizontalStrut(18));
-        leftPanel.add(titleLabel);
 
         JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         userPanel.setOpaque(false);
@@ -311,45 +318,108 @@ public class AdminDashboard extends JFrame {
 
     private JPanel createDashboardPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(EMSI_LIGHT_GRAY);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        panel.setBackground(new Color(245, 247, 250));
+        panel.setBorder(new EmptyBorder(32, 32, 32, 32));
 
+        // Titre principal moderne
         JLabel welcomeLabel = new JLabel("Bienvenue dans le tableau de bord administrateur");
-        welcomeLabel.setFont(TITLE_FONT);
-        welcomeLabel.setForeground(EMSI_GRAY);
+        welcomeLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        welcomeLabel.setForeground(new Color(16, 185, 129)); // Vert EMSI moderne
+        welcomeLabel.setBorder(new EmptyBorder(0, 0, 18, 0));
+        welcomeLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        JPanel statsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
+        JPanel welcomePanel = new JPanel(new BorderLayout());
+        welcomePanel.setOpaque(false);
+        welcomePanel.add(welcomeLabel, BorderLayout.CENTER);
+        welcomePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+
+        // Cartes statistiques modernes
+        JPanel statsPanel = new JPanel(new GridLayout(1, 3, 32, 0));
         statsPanel.setOpaque(false);
+        statsPanel.setBorder(new EmptyBorder(0, 0, 32, 0));
 
-        statsPanel.add(createModernStatPanel("Étudiants", "187", "", new Color(33, 150, 243)));
-        statsPanel.add(createModernStatPanel("Enseignants", "42", "", new Color(0, 150, 136)));
-        statsPanel.add(createModernStatPanel("Cours", "56", "", new Color(255, 152, 0)));
+        EtudiantService etudiantService = new EtudiantService();
+        TeacherService teacherService = new TeacherService();
+        CoursService coursService = new CoursService();
 
-        JPanel northPanel = new JPanel(new BorderLayout());
+        int nbEtudiants = etudiantService.countEtudiants();
+        int nbEnseignants = teacherService.countTeachers();
+        int nbCours = coursService.countCours();
+
+        statsPanel.add(createModernStatCard("Étudiants", String.valueOf(nbEtudiants), "👨‍🎓", new Color(16, 185, 129)));
+        statsPanel.add(createModernStatCard("Enseignants", String.valueOf(nbEnseignants), "👩‍🏫", new Color(59, 130, 246)));
+        statsPanel.add(createModernStatCard("Cours", String.valueOf(nbCours), "📚", new Color(251, 191, 36)));
+
+        // Section top (titre + stats)
+        JPanel northPanel = new JPanel();
+        northPanel.setLayout(new BoxLayout(northPanel, BoxLayout.Y_AXIS));
         northPanel.setOpaque(false);
-        northPanel.add(welcomeLabel, BorderLayout.NORTH);
-        northPanel.add(Box.createRigidArea(new Dimension(0, 30)), BorderLayout.CENTER);
-        northPanel.add(statsPanel, BorderLayout.SOUTH);
+        northPanel.add(welcomePanel);
+        northPanel.add(statsPanel);
 
-        // Tableau des dernières activités
+        // Tableau des dernières activités dynamiques
+        List<Student> derniersEtudiants = etudiantService.getLastEtudiants(2);
+        List<Teacher> derniersEnseignants = teacherService.getLastTeachers(1);
+        List<cours> derniersCours = coursService.getLastCours(2);
+
+        List<Object[]> activities = new ArrayList<>();
+        if (!derniersEtudiants.isEmpty()) {
+            Student s = derniersEtudiants.get(0);
+            activities.add(new Object[]{"Ajout d'étudiant", s.getPrenom() + " " + s.getNom(), "Aujourd'hui"});
+        }
+        if (!derniersCours.isEmpty()) {
+            cours c = derniersCours.get(0);
+            activities.add(new Object[]{"Ajout de cours", c.getIntitule(), "Aujourd'hui"});
+        }
+        if (!derniersEnseignants.isEmpty()) {
+            Teacher t = derniersEnseignants.get(0);
+            activities.add(new Object[]{"Ajout d'enseignant", t.getPrenom() + " " + t.getNom(), "Hier"});
+        }
+        if (derniersEtudiants.size() > 1) {
+            Student s2 = derniersEtudiants.get(1);
+            activities.add(new Object[]{"Ajout d'étudiant", s2.getPrenom() + " " + s2.getNom(), "Hier"});
+        }
+        if (derniersCours.size() > 1) {
+            cours c2 = derniersCours.get(1);
+            activities.add(new Object[]{"Ajout de cours", c2.getIntitule(), "Avant-hier"});
+        }
+
         DefaultTableModel tableModel = new DefaultTableModel(
-                new Object[][] {
-                        {"Ajout d'étudiant", "Ahmed Bensouda", "Aujourd'hui 10:30"},
-                        {"Modification de cours", "Programmation Web", "Aujourd'hui 09:15"},
-                        {"Ajout d'enseignant", "Dr. Karim Alaoui", "Hier 15:45"},
-                        {"Suppression d'étudiant", "Rachid Lajouad", "Hier 14:22"},
-                        {"Modification d'emploi du temps", "Groupe B", "Avant-hier 11:05"}
-                },
+                activities.toArray(new Object[0][0]),
                 new String[] {"Action", "Description", "Date"}
         );
 
-        JTable activityTable = new JTable(tableModel);
-        activityTable.setRowHeight(30);
-        activityTable.getTableHeader().setFont(STAT_TITLE_FONT);
-        activityTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        JTable activityTable = new JTable(tableModel) {
+            @Override
+            public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                if (!isRowSelected(row)) {
+                    c.setBackground(row % 2 == 0 ? new Color(250, 250, 250) : new Color(236, 253, 245)); // Lignes zébrées
+                } else {
+                    c.setBackground(new Color(209, 250, 229));
+                }
+                c.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+                if (c instanceof JLabel) {
+                    ((JLabel) c).setBorder(new EmptyBorder(8, 12, 8, 12));
+                }
+                return c;
+            }
+        };
+        activityTable.setRowHeight(36);
+        activityTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
+        activityTable.getTableHeader().setBackground(new Color(220, 255, 220)); // Vert très clair
+        activityTable.getTableHeader().setForeground(new Color(0, 104, 56));   // Vert foncé EMSI
+        activityTable.getTableHeader().setPreferredSize(new Dimension(100, 36)); // Hauteur de l'en-tête
         activityTable.setShowGrid(false);
         activityTable.setIntercellSpacing(new Dimension(0, 0));
-        activityTable.setSelectionBackground(new Color(230, 245, 233));
+        activityTable.setSelectionBackground(new Color(209, 250, 229));
+
+        // --- AJOUT POUR RENDRE LES COLONNES VISIBLES ---
+        activityTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+        activityTable.setPreferredScrollableViewportSize(new Dimension(600, activityTable.getRowHeight() * 6));
+        activityTable.getColumnModel().getColumn(0).setPreferredWidth(180); // Action
+        activityTable.getColumnModel().getColumn(1).setPreferredWidth(320); // Description
+        activityTable.getColumnModel().getColumn(2).setPreferredWidth(140); // Date
 
         JScrollPane tableScrollPane = new JScrollPane(activityTable);
         tableScrollPane.setBorder(BorderFactory.createTitledBorder(
@@ -357,11 +427,14 @@ public class AdminDashboard extends JFrame {
                 "Dernières activités",
                 1,
                 0,
-                STAT_TITLE_FONT
+                new Font("Segoe UI", Font.BOLD, 15)
         ));
+        tableScrollPane.setBackground(Color.WHITE);
+        tableScrollPane.setPreferredSize(new Dimension(0, 220));
 
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setOpaque(false);
+        centerPanel.setBorder(new EmptyBorder(24, 0, 0, 0));
         centerPanel.add(tableScrollPane, BorderLayout.CENTER);
 
         panel.add(northPanel, BorderLayout.NORTH);
@@ -370,44 +443,54 @@ public class AdminDashboard extends JFrame {
         return panel;
     }
 
-    private JPanel createModernStatPanel(String title, String value, String icon, Color color) {
-        JPanel panel = new JPanel() {
+    // Carte statistique moderne
+    private JPanel createModernStatCard(String title, String value, String icon, Color accentColor) {
+        JPanel card = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2d.setColor(Color.WHITE);
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
-                for (int i = 0; i < 4; i++) {
-                    g2d.setColor(new Color(0, 0, 0, 2 + i));
-                    g2d.drawRoundRect(i, i, getWidth() - 2*i - 1, getHeight() - 2*i - 1, 14, 14);
-                }
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+                g2d.setColor(new Color(0, 0, 0, 10));
+                g2d.fillRoundRect(6, getHeight() - 18, getWidth() - 12, 12, 12, 12); // ombre douce en bas
                 g2d.dispose();
             }
         };
-        panel.setLayout(new BorderLayout());
-        panel.setBorder(new EmptyBorder(18, 18, 18, 18));
-        panel.setOpaque(false);
+        card.setLayout(new BorderLayout(18, 0));
+        card.setBorder(new EmptyBorder(18, 18, 18, 18));
+        card.setPreferredSize(new Dimension(0, 110));
+        card.setOpaque(false);
 
-        JPanel headerPanel = new JPanel(new BorderLayout(10, 0));
-        headerPanel.setOpaque(false);
+        // Icône
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 38));
+        iconLabel.setForeground(accentColor);
+        iconLabel.setBorder(new EmptyBorder(0, 0, 0, 10));
 
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(STAT_TITLE_FONT);
-        titleLabel.setForeground(EMSI_GRAY);
-
-        headerPanel.add(titleLabel, BorderLayout.CENTER);
-
+        // Valeur
         JLabel valueLabel = new JLabel(value);
-        valueLabel.setFont(STAT_VALUE_FONT);
-        valueLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        valueLabel.setForeground(new Color(50, 50, 50));
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 36));
+        valueLabel.setForeground(new Color(31, 41, 55));
+        valueLabel.setHorizontalAlignment(SwingConstants.LEFT);
 
-        panel.add(headerPanel, BorderLayout.NORTH);
-        panel.add(valueLabel, BorderLayout.CENTER);
+        // Titre
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        titleLabel.setForeground(accentColor.darker());
+        titleLabel.setBorder(new EmptyBorder(6, 0, 0, 0));
 
-        return panel;
+        JPanel textPanel = new JPanel();
+        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+        textPanel.setOpaque(false);
+        textPanel.add(valueLabel);
+        textPanel.add(titleLabel);
+
+        card.add(iconLabel, BorderLayout.WEST);
+        card.add(textPanel, BorderLayout.CENTER);
+
+        return card;
     }
 
     private JPanel createStudentsPanel() {
@@ -415,11 +498,72 @@ public class AdminDashboard extends JFrame {
         panel.setBackground(EMSI_LIGHT_GRAY);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JLabel titleLabel = new JLabel("Liste des étudiants");
+        // Header avec titre et bouton de gestion
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+        headerPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
+
+        JLabel titleLabel = new JLabel("Gestion des Étudiants");
         titleLabel.setFont(TITLE_FONT);
         titleLabel.setForeground(EMSI_GREEN);
-        panel.add(titleLabel, BorderLayout.NORTH);
 
+        JButton manageButton = new JButton("Gérer les Étudiants") {
+            private boolean hovering = false;
+            {
+                addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseEntered(MouseEvent e) { hovering = true; repaint(); }
+                    @Override
+                    public void mouseExited(MouseEvent e) { hovering = false; repaint(); }
+                });
+            }
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color color = hovering ? EMSI_DARK_GREEN : EMSI_GREEN;
+                g2d.setColor(color);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2d.setColor(Color.WHITE);
+                g2d.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                FontMetrics fm = g2d.getFontMetrics();
+                int textX = (getWidth() - fm.stringWidth(getText())) / 2;
+                int textY = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2d.drawString(getText(), textX, textY);
+                g2d.dispose();
+            }
+        };
+        manageButton.setPreferredSize(new Dimension(180, 35));
+        manageButton.setBorderPainted(false);
+        manageButton.setFocusPainted(false);
+        manageButton.setContentAreaFilled(false);
+        manageButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        manageButton.addActionListener(e -> {
+            StudentManagementDialog dialog = new StudentManagementDialog(this);
+            dialog.setVisible(true);
+            refreshStudentsTable();
+        });
+
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        headerPanel.add(manageButton, BorderLayout.EAST);
+
+        panel.add(headerPanel, BorderLayout.NORTH);
+        JPanel tablePanel = createStudentsTablePanel();
+        panel.add(tablePanel, BorderLayout.CENTER);
+        return panel;
+    }
+    
+    private JPanel createStudentsTablePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(EMSI_LIGHT_GRAY);
+        panel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(EMSI_GREEN, 2),
+            "Liste des Étudiants",
+            0, 0,
+            new Font("Segoe UI", Font.BOLD, 14),
+            EMSI_GREEN
+        ));
+        
         // Récupération des étudiants
         java.util.List<com.emsi.gestionuniv.model.user.Student> students = new com.emsi.gestionuniv.service.EtudiantService().getAllStudents();
         String[] columns = {"Matricule", "Prénom", "Nom", "Email", "Filière", "Promotion", "Groupe"};
@@ -447,7 +591,31 @@ public class AdminDashboard extends JFrame {
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(EMSI_GREEN, 1));
         panel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Stocker la référence de la table pour pouvoir la rafraîchir
+        this.studentsTable = table;
+        this.studentsTableModel = model;
+        
         return panel;
+    }
+    
+    private void refreshStudentsTable() {
+        if (studentsTableModel != null) {
+            java.util.List<com.emsi.gestionuniv.model.user.Student> students = new com.emsi.gestionuniv.service.EtudiantService().getAllStudents();
+            studentsTableModel.setRowCount(0);
+            for (var s : students) {
+                Object[] row = {
+                    s.getMatricule(),
+                    s.getPrenom(),
+                    s.getNom(),
+                    s.getEmail(),
+                    s.getFiliere(),
+                    s.getPromotion(),
+                    s.getGroupe()
+                };
+                studentsTableModel.addRow(row);
+            }
+        }
     }
 
     private JPanel createTeachersPanel() {
@@ -455,11 +623,72 @@ public class AdminDashboard extends JFrame {
         panel.setBackground(EMSI_LIGHT_GRAY);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JLabel titleLabel = new JLabel("Liste des enseignants");
+        // Header avec titre et bouton de gestion
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+        headerPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
+
+        JLabel titleLabel = new JLabel("Gestion des Enseignants");
         titleLabel.setFont(TITLE_FONT);
         titleLabel.setForeground(EMSI_GREEN);
-        panel.add(titleLabel, BorderLayout.NORTH);
 
+        JButton manageButton = new JButton("Gérer les Enseignants") {
+            private boolean hovering = false;
+            {
+                addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseEntered(MouseEvent e) { hovering = true; repaint(); }
+                    @Override
+                    public void mouseExited(MouseEvent e) { hovering = false; repaint(); }
+                });
+            }
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color color = hovering ? EMSI_DARK_GREEN : EMSI_GREEN;
+                g2d.setColor(color);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2d.setColor(Color.WHITE);
+                g2d.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                FontMetrics fm = g2d.getFontMetrics();
+                int textX = (getWidth() - fm.stringWidth(getText())) / 2;
+                int textY = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2d.drawString(getText(), textX, textY);
+                g2d.dispose();
+            }
+        };
+        manageButton.setPreferredSize(new Dimension(180, 35));
+        manageButton.setBorderPainted(false);
+        manageButton.setFocusPainted(false);
+        manageButton.setContentAreaFilled(false);
+        manageButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        manageButton.addActionListener(e -> {
+            TeacherManagementDialog dialog = new TeacherManagementDialog(this);
+            dialog.setVisible(true);
+            refreshTeachersTable();
+        });
+
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        headerPanel.add(manageButton, BorderLayout.EAST);
+
+        panel.add(headerPanel, BorderLayout.NORTH);
+        JPanel tablePanel = createTeachersTablePanel();
+        panel.add(tablePanel, BorderLayout.CENTER);
+        return panel;
+    }
+    
+    private JPanel createTeachersTablePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(EMSI_LIGHT_GRAY);
+        panel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(EMSI_GREEN, 2),
+            "Liste des Enseignants",
+            0, 0,
+            new Font("Segoe UI", Font.BOLD, 14),
+            EMSI_GREEN
+        ));
+        
         // Récupération des enseignants
         java.util.List<com.emsi.gestionuniv.model.user.Teacher> teachers = new com.emsi.gestionuniv.service.TeacherService().getAllTeachers();
         com.emsi.gestionuniv.service.TeacherService teacherService = new com.emsi.gestionuniv.service.TeacherService();
@@ -491,7 +720,34 @@ public class AdminDashboard extends JFrame {
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(EMSI_GREEN, 1));
         panel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Stocker la référence de la table pour pouvoir la rafraîchir
+        this.studentsTable = table;
+        this.studentsTableModel = model;
+        
         return panel;
+    }
+    
+    private void refreshTeachersTable() {
+        if (studentsTableModel != null) {
+            java.util.List<com.emsi.gestionuniv.model.user.Teacher> teachers = new com.emsi.gestionuniv.service.TeacherService().getAllTeachers();
+            com.emsi.gestionuniv.service.TeacherService teacherService = new com.emsi.gestionuniv.service.TeacherService();
+            studentsTableModel.setRowCount(0);
+            for (var t : teachers) {
+                java.util.List<com.emsi.gestionuniv.service.TeacherService.Classe> groupes = teacherService.getClassesByTeacherId(t.getId());
+                String groupesStr = groupes.stream().map(com.emsi.gestionuniv.service.TeacherService.Classe::getNom).reduce((a, b) -> a + ", " + b).orElse("");
+                Object[] row = {
+                    t.getId(),
+                    t.getPrenom(),
+                    t.getNom(),
+                    t.getEmail(),
+                    t.getTelephone(),
+                    t.getSpecialite(),
+                    groupesStr
+                };
+                studentsTableModel.addRow(row);
+            }
+        }
     }
 
     private JPanel createCoursesPanel() {
@@ -499,11 +755,73 @@ public class AdminDashboard extends JFrame {
         panel.setBackground(EMSI_LIGHT_GRAY);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JLabel titleLabel = new JLabel("Liste des cours");
+        // Header avec titre et bouton de gestion
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+        headerPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
+
+        JLabel titleLabel = new JLabel("Gestion des Cours");
         titleLabel.setFont(TITLE_FONT);
         titleLabel.setForeground(EMSI_GREEN);
-        panel.add(titleLabel, BorderLayout.NORTH);
 
+        JButton manageButton = new JButton("Gérer les Cours") {
+            private boolean hovering = false;
+            {
+                addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseEntered(MouseEvent e) { hovering = true; repaint(); }
+                    @Override
+                    public void mouseExited(MouseEvent e) { hovering = false; repaint(); }
+                });
+            }
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color color = hovering ? EMSI_DARK_GREEN : EMSI_GREEN;
+                g2d.setColor(color);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2d.setColor(Color.WHITE);
+                g2d.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                FontMetrics fm = g2d.getFontMetrics();
+                int textX = (getWidth() - fm.stringWidth(getText())) / 2;
+                int textY = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2d.drawString(getText(), textX, textY);
+                g2d.dispose();
+            }
+        };
+        manageButton.setPreferredSize(new Dimension(180, 35));
+        manageButton.setBorderPainted(false);
+        manageButton.setFocusPainted(false);
+        manageButton.setContentAreaFilled(false);
+        manageButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        manageButton.addActionListener(e -> {
+            CoursManagementDialog dialog = new CoursManagementDialog(this);
+            dialog.setVisible(true);
+            refreshCoursesTable();
+        });
+
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        headerPanel.add(manageButton, BorderLayout.EAST);
+
+        panel.add(headerPanel, BorderLayout.NORTH);
+        JPanel tablePanel = createCoursesTablePanel();
+        panel.add(tablePanel, BorderLayout.CENTER);
+        return panel;
+    }
+    
+    private JPanel createCoursesTablePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(EMSI_LIGHT_GRAY);
+        panel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(EMSI_GREEN, 2),
+            "Liste des Cours",
+            0, 0,
+            new Font("Segoe UI", Font.BOLD, 14),
+            EMSI_GREEN
+        ));
+        
+        // Récupération des cours
         java.util.List<com.emsi.gestionuniv.model.academic.cours> coursList = new com.emsi.gestionuniv.service.CoursService().getAllCours();
         String[] columns = {"Code", "Intitulé", "Filière", "Niveau", "Effectif", "Volume horaire"};
         Object[][] data = new Object[coursList.size()][columns.length];
@@ -515,6 +833,7 @@ public class AdminDashboard extends JFrame {
             data[i][3] = c.getNiveau();
             data[i][4] = c.getEffectif();
             data[i][5] = c.getVolumeHoraire();
+
         }
         javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(data, columns) {
             @Override
@@ -529,7 +848,30 @@ public class AdminDashboard extends JFrame {
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(EMSI_GREEN, 1));
         panel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Stocker la référence de la table pour pouvoir la rafraîchir
+        this.studentsTable = table;
+        this.studentsTableModel = model;
+        
         return panel;
+    }
+    
+    private void refreshCoursesTable() {
+        if (studentsTableModel != null) {
+            java.util.List<com.emsi.gestionuniv.model.academic.cours> coursList = new com.emsi.gestionuniv.service.CoursService().getAllCours();
+            studentsTableModel.setRowCount(0);
+            for (var c : coursList) {
+                Object[] row = {
+                    c.getCode(),
+                    c.getIntitule(),
+                    c.getFiliere(),
+                    c.getNiveau(),
+                    c.getEffectif(),
+                    c.getVolumeHoraire()
+                };
+                studentsTableModel.addRow(row);
+            }
+        }
     }
 
     private JPanel createSettingsPanel() {

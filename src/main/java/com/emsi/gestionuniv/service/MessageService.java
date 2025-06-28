@@ -74,4 +74,16 @@ public class MessageService {
             loadMessages();
         }
     }
+
+    /**
+     * Retourne le nombre total de messages (envoyés ou reçus) pour un enseignant donné
+     * @param teacherId l'identifiant de l'enseignant
+     * @return le nombre de messages
+     */
+    public int countMessagesForTeacher(int teacherId) {
+        return (int) messages.stream()
+                .filter(m -> (m.getSenderId() == teacherId && "TEACHER".equalsIgnoreCase(m.getSenderType()))
+                        || (m.getReceiverId() == teacherId && "TEACHER".equalsIgnoreCase(m.getReceiverType())))
+                .count();
+    }
 }

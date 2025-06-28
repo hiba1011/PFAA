@@ -354,4 +354,309 @@ public class EtudiantService {
         }
         return new ArrayList<>(studentsSet);
     }
+
+    /**
+     * Ajoute un nouvel étudiant dans la base de données
+     * 
+     * @param student L'étudiant à ajouter
+     * @return true si l'ajout a réussi, false sinon
+     */
+    public boolean addStudent(Student student) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        boolean success = false;
+
+        try {
+            conn = DBConnect.getConnection();
+            String sql = String.format(
+                "INSERT INTO %s.%s (matricule, nom, prenom, email, mot_de_passe, filiere, promotion, groupe, photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                DATABASE_SCHEMA, STUDENT_TABLE
+            );
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, student.getMatricule());
+            pstmt.setString(2, student.getNom());
+            pstmt.setString(3, student.getPrenom());
+            pstmt.setString(4, student.getEmail());
+            pstmt.setString(5, student.getPassword());
+            pstmt.setString(6, student.getFiliere());
+            pstmt.setString(7, student.getPromotion());
+            pstmt.setString(8, student.getGroupe());
+            pstmt.setString(9, student.getPhoto() != null ? student.getPhoto() : "");
+
+            success = pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de l'ajout de l'étudiant: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(null, pstmt, conn);
+        }
+
+        return success;
+    }
+
+    /**
+     * Supprime un étudiant de la base de données
+     * 
+     * @param id L'identifiant de l'étudiant à supprimer
+     * @return true si la suppression a réussi, false sinon
+     */
+    public boolean deleteStudent(int id) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        boolean success = false;
+
+        try {
+            conn = DBConnect.getConnection();
+            String sql = String.format("DELETE FROM %s.%s WHERE id = ?", DATABASE_SCHEMA, STUDENT_TABLE);
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, id);
+
+            success = pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la suppression de l'étudiant: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(null, pstmt, conn);
+        }
+
+        return success;
+    }
+
+    /**
+     * Met à jour les informations d'un étudiant
+     * 
+     * @param student L'étudiant avec les nouvelles informations
+     * @return true si la mise à jour a réussi, false sinon
+     */
+    public boolean updateStudent(Student student) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        boolean success = false;
+
+        try {
+            conn = DBConnect.getConnection();
+            String sql = String.format(
+                "UPDATE %s.%s SET matricule=?, nom=?, prenom=?, email=?, mot_de_passe=?, filiere=?, promotion=?, groupe=?, photo=? WHERE id=?",
+                DATABASE_SCHEMA, STUDENT_TABLE
+            );
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, student.getMatricule());
+            pstmt.setString(2, student.getNom());
+            pstmt.setString(3, student.getPrenom());
+            pstmt.setString(4, student.getEmail());
+            pstmt.setString(5, student.getPassword());
+            pstmt.setString(6, student.getFiliere());
+            pstmt.setString(7, student.getPromotion());
+            pstmt.setString(8, student.getGroupe());
+            pstmt.setString(9, student.getPhoto() != null ? student.getPhoto() : "");
+            pstmt.setInt(10, student.getId());
+
+            success = pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la mise à jour de l'étudiant: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(null, pstmt, conn);
+        }
+
+        return success;
+    }
+
+    /**
+     * Recherche des étudiants par nom ou prénom
+     * 
+     * @param searchTerm Le terme de recherche
+     * @return Liste des étudiants correspondants
+     */
+    public List<Student> searchStudents(String searchTerm) {
+        List<Student> students = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBConnect.getConnection();
+            String sql = String.format(
+                "SELECT * FROM %s.%s WHERE nom LIKE ? OR prenom LIKE ? OR matricule LIKE ? OR email LIKE ?",
+                DATABASE_SCHEMA, STUDENT_TABLE
+            );
+            pstmt = conn.prepareStatement(sql);
+            String searchPattern = "%" + searchTerm + "%";
+            pstmt.setString(1, searchPattern);
+            pstmt.setString(2, searchPattern);
+            pstmt.setString(3, searchPattern);
+            pstmt.setString(4, searchPattern);
+
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                students.add(createStudentFromResultSet(rs));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la recherche d'étudiants: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+
+        return students;
+    }
+
+    /**
+     * Vérifie si un matricule existe déjà
+     * 
+     * @param matricule Le matricule à vérifier
+     * @return true si le matricule existe, false sinon
+     */
+    public boolean matriculeExists(String matricule) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        boolean exists = false;
+
+        try {
+            conn = DBConnect.getConnection();
+            String sql = String.format("SELECT COUNT(*) FROM %s.%s WHERE matricule = ?", DATABASE_SCHEMA, STUDENT_TABLE);
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, matricule);
+
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                exists = rs.getInt(1) > 0;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la vérification du matricule: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+
+        return exists;
+    }
+
+    /**
+     * Vérifie si un email existe déjà
+     * 
+     * @param email L'email à vérifier
+     * @return true si l'email existe, false sinon
+     */
+    public boolean emailExists(String email) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        boolean exists = false;
+
+        try {
+            conn = DBConnect.getConnection();
+            String sql = String.format("SELECT COUNT(*) FROM %s.%s WHERE email = ?", DATABASE_SCHEMA, STUDENT_TABLE);
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, email);
+
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                exists = rs.getInt(1) > 0;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la vérification de l'email: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+
+        return exists;
+    }
+
+    public int countEtudiants() {
+        int count = 0;
+        String sql = "SELECT COUNT(*) FROM etudiants";
+        try (java.sql.Connection conn = com.emsi.gestionuniv.config.DBConnect.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql);
+             java.sql.ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    public java.util.List<Student> getLastEtudiants(int n) {
+        java.util.List<Student> list = new java.util.ArrayList<>();
+        String sql = "SELECT * FROM etudiants ORDER BY id DESC LIMIT ?";
+        try (java.sql.Connection conn = com.emsi.gestionuniv.config.DBConnect.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, n);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Student s = new Student();
+                    s.setId(rs.getInt("id"));
+                    s.setNom(rs.getString("nom"));
+                    s.setPrenom(rs.getString("prenom"));
+                    s.setEmail(rs.getString("email"));
+                    s.setMatricule(rs.getString("matricule"));
+                    s.setFiliere(rs.getString("filiere"));
+                    s.setPromotion(rs.getString("promotion"));
+                    s.setGroupe(rs.getString("groupe"));
+                    list.add(s);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Récupère la liste de tous les groupes distincts présents dans la table etudiants.
+     * @return Liste des noms de groupes (String)
+     */
+    public List<String> getAllGroupes() {
+        List<String> groupes = new ArrayList<>();
+        String sql = String.format("SELECT DISTINCT groupe FROM %s.%s WHERE groupe IS NOT NULL AND groupe <> ''", DATABASE_SCHEMA, STUDENT_TABLE);
+        try (Connection conn = DBConnect.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                String groupe = rs.getString("groupe");
+                if (groupe != null && !groupe.trim().isEmpty()) {
+                    groupes.add(groupe);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la récupération des groupes: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return groupes;
+    }
+
+    public List<Student> getStudentsByCoursId(int coursId) {
+        List<Student> students = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBConnect.getConnection();
+            String sql = "SELECT e.* FROM etudiants e " +
+                         "JOIN inscriptions i ON e.id = i.etudiant_id " +
+                         "WHERE i.cours_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, coursId);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Student s = createStudentFromResultSet(rs);
+                students.add(s);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+        return students;
+    }
 }

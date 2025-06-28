@@ -34,6 +34,14 @@ public class CoursService {
                 cours c = new cours();
                 c.setId(rs.getInt("id"));
                 c.setTitre(rs.getString("titre"));
+                c.setCode(rs.getString("code"));
+                c.setIntitule(rs.getString("intitule"));
+                c.setFiliere(rs.getString("filiere"));
+                c.setNiveau(rs.getString("niveau"));
+                c.setEffectif(rs.getInt("effectif"));
+                c.setVolumeHoraire(rs.getString("volume_horaire"));
+                c.setCredits(rs.getInt("credits"));
+                c.setEnseignantId(rs.getInt("enseignant_id"));
                 coursList.add(c);
             }
         } catch (SQLException e) {
@@ -292,4 +300,190 @@ public class CoursService {
         return coursList;
     }
     
+    /**
+     * Ajoute un nouveau cours dans la base de données
+     * @param c L'objet cours à ajouter
+     * @return true si l'ajout a réussi, false sinon
+     */
+    public boolean addCours(cours c) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        boolean success = false;
+
+        try {
+            conn = DBConnect.getConnection();
+            String sql = String.format("INSERT INTO %s.%s (code, intitule, credits, enseignant_id, filiere, niveau, effectif, volume_horaire, titre) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    DATABASE_SCHEMA, COURS_TABLE);
+
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, c.getCode());
+            pstmt.setString(2, c.getIntitule());
+            pstmt.setInt(3, c.getCredits());
+            pstmt.setInt(4, c.getEnseignantId());
+            pstmt.setString(5, c.getFiliere());
+            pstmt.setString(6, c.getNiveau());
+            pstmt.setInt(7, c.getEffectif());
+            pstmt.setString(8, c.getVolumeHoraire());
+            pstmt.setString(9, c.getTitre());
+
+            success = pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de l'ajout du cours: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(null, pstmt, conn);
+        }
+        return success;
+    }
+    
+    /**
+     * Supprime un cours de la base de données
+     * @param coursId ID du cours à supprimer
+     * @return true si la suppression a réussi, false sinon
+     */
+    public boolean deleteCours(int coursId) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        boolean success = false;
+
+        try {
+            conn = DBConnect.getConnection();
+            String sql = String.format("DELETE FROM %s.%s WHERE id = ?",
+                    DATABASE_SCHEMA, COURS_TABLE);
+
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, coursId);
+
+            success = pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la suppression du cours: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(null, pstmt, conn);
+        }
+        return success;
+    }
+    
+    public int countCours() {
+        int count = 0;
+        String sql = "SELECT COUNT(*) FROM cours";
+        try (java.sql.Connection conn = com.emsi.gestionuniv.config.DBConnect.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql);
+             java.sql.ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    public java.util.List<cours> getLastCours(int n) {
+        java.util.List<cours> list = new java.util.ArrayList<>();
+        String sql = String.format("SELECT * FROM %s.%s ORDER BY id DESC LIMIT ?", DATABASE_SCHEMA, COURS_TABLE);
+        try (java.sql.Connection conn = com.emsi.gestionuniv.config.DBConnect.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, n);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    cours c = new cours();
+                    c.setId(rs.getInt("id"));
+                    c.setCode(rs.getString("code"));
+                    c.setIntitule(rs.getString("intitule"));
+                    c.setCredits(rs.getInt("credits"));
+                    c.setEnseignantId(rs.getInt("enseignant_id"));
+                    c.setFiliere(rs.getString("filiere"));
+                    c.setNiveau(rs.getString("niveau"));
+                    c.setEffectif(rs.getInt("effectif"));
+                    c.setVolumeHoraire(rs.getString("volume_horaire"));
+                    c.setTitre(rs.getString("titre"));
+                    list.add(c);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public static class CoursWithEnseignant extends cours {
+        private String enseignantNom;
+        private String enseignantPrenom;
+        public String getEnseignantNom() { return enseignantNom; }
+        public void setEnseignantNom(String nom) { this.enseignantNom = nom; }
+        public String getEnseignantPrenom() { return enseignantPrenom; }
+        public void setEnseignantPrenom(String prenom) { this.enseignantPrenom = prenom; }
+    }
+
+    public List<CoursWithEnseignant> getAllCoursWithEnseignant() {
+        List<CoursWithEnseignant> coursList = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBConnect.getConnection();
+            String sql = "SELECT c.*, e.nom AS enseignant_nom, e.prenom AS enseignant_prenom " +
+                         "FROM cours c LEFT JOIN enseignants e ON c.enseignant_id = e.id";
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                CoursWithEnseignant c = new CoursWithEnseignant();
+                c.setId(rs.getInt("id"));
+                c.setCode(rs.getString("code"));
+                c.setIntitule(rs.getString("intitule"));
+                c.setFiliere(rs.getString("filiere"));
+                c.setNiveau(rs.getString("niveau"));
+                c.setEffectif(rs.getInt("effectif"));
+                c.setVolumeHoraire(rs.getString("volume_horaire"));
+                c.setTitre(rs.getString("titre"));
+                c.setCredits(rs.getInt("credits"));
+                c.setEnseignantId(rs.getInt("enseignant_id"));
+                c.setEnseignantNom(rs.getString("enseignant_nom"));
+                c.setEnseignantPrenom(rs.getString("enseignant_prenom"));
+                coursList.add(c);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+        return coursList;
+    }
+
+    public CoursWithEnseignant getCoursByIdWithEnseignant(int coursId) {
+        CoursWithEnseignant c = null;
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBConnect.getConnection();
+            String sql = "SELECT c.*, e.nom AS enseignant_nom, e.prenom AS enseignant_prenom " +
+                         "FROM cours c LEFT JOIN enseignants e ON c.enseignant_id = e.id WHERE c.id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, coursId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                c = new CoursWithEnseignant();
+                c.setId(rs.getInt("id"));
+                c.setCode(rs.getString("code"));
+                c.setIntitule(rs.getString("intitule"));
+                c.setFiliere(rs.getString("filiere"));
+                c.setNiveau(rs.getString("niveau"));
+                c.setEffectif(rs.getInt("effectif"));
+                c.setVolumeHoraire(rs.getString("volume_horaire"));
+                c.setTitre(rs.getString("titre"));
+                c.setCredits(rs.getInt("credits"));
+                c.setEnseignantId(rs.getInt("enseignant_id"));
+                c.setEnseignantNom(rs.getString("enseignant_nom"));
+                c.setEnseignantPrenom(rs.getString("enseignant_prenom"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+        return c;
+    }
 }

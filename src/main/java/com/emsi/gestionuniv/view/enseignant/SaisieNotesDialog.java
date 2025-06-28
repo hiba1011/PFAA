@@ -353,8 +353,16 @@ public class SaisieNotesDialog extends JDialog {
         JButton clearAllButton = createModernButton("Effacer tout", WARNING_COLOR, false);
         clearAllButton.addActionListener(e -> clearAllGrades());
 
+        // --- Boutons d'export ---
+        JButton exportExcelButton = createModernButton("Exporter Excel", EMSI_PRIMARY, false);
+        exportExcelButton.addActionListener(e -> exportToExcel());
+        JButton exportPdfButton = createModernButton("Exporter PDF", EMSI_HEADER_GREEN, false);
+        exportPdfButton.addActionListener(e -> exportToPDF());
+
         leftPanel.add(addRowButton);
         leftPanel.add(clearAllButton);
+        leftPanel.add(exportExcelButton);
+        leftPanel.add(exportPdfButton);
 
         // Panel de droite avec boutons principaux
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
@@ -666,5 +674,75 @@ public class SaisieNotesDialog extends JDialog {
         classCombo.setToolTipText("Sélectionnez la classe pour charger les étudiants");
         courseCombo.setToolTipText("Sélectionnez la matière pour laquelle saisir les notes");
         table.setToolTipText("Double-cliquez sur une cellule pour modifier une note");
+    }
+
+    // --- Méthode d'export Excel ---
+    private void exportToExcel() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Enregistrer sous");
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            java.io.File file = fileChooser.getSelectedFile();
+            if (!file.getName().endsWith(".xlsx")) {
+                file = new java.io.File(file.getAbsolutePath() + ".xlsx");
+            }
+            try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+                org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Notes");
+                // En-têtes
+                org.apache.poi.ss.usermodel.Row header = sheet.createRow(0);
+                for (int col = 0; col < table.getColumnCount(); col++) {
+                    header.createCell(col).setCellValue(table.getColumnName(col));
+                }
+                // Données
+                for (int row = 0; row < table.getRowCount(); row++) {
+                    org.apache.poi.ss.usermodel.Row excelRow = sheet.createRow(row + 1);
+                    for (int col = 0; col < table.getColumnCount(); col++) {
+                        Object value = table.getValueAt(row, col);
+                        excelRow.createCell(col).setCellValue(value != null ? value.toString() : "");
+                    }
+                }
+                try (java.io.FileOutputStream out = new java.io.FileOutputStream(file)) {
+                    workbook.write(out);
+                }
+                JOptionPane.showMessageDialog(this, "Export Excel réussi !");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Erreur export Excel : " + ex.getMessage());
+            }
+        }
+    }
+
+    // --- Méthode d'export PDF ---
+    private void exportToPDF() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Enregistrer sous");
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            java.io.File file = fileChooser.getSelectedFile();
+            if (!file.getName().endsWith(".pdf")) {
+                file = new java.io.File(file.getAbsolutePath() + ".pdf");
+            }
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(file)) {
+                com.lowagie.text.Document document = new com.lowagie.text.Document();
+                com.lowagie.text.pdf.PdfWriter.getInstance(document, fos);
+                document.open();
+                com.lowagie.text.pdf.PdfPTable pdfTable = new com.lowagie.text.pdf.PdfPTable(table.getColumnCount());
+                // En-têtes
+                for (int col = 0; col < table.getColumnCount(); col++) {
+                    pdfTable.addCell(table.getColumnName(col));
+                }
+                // Données
+                for (int row = 0; row < table.getRowCount(); row++) {
+                    for (int col = 0; col < table.getColumnCount(); col++) {
+                        Object value = table.getValueAt(row, col);
+                        pdfTable.addCell(value != null ? value.toString() : "");
+                    }
+                }
+                document.add(pdfTable);
+                document.close();
+                JOptionPane.showMessageDialog(this, "Export PDF réussi !");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Erreur export PDF : " + ex.getMessage());
+            }
+        }
     }
 }

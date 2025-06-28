@@ -1,5 +1,8 @@
 package com.emsi.gestionuniv.model.academic;
 
+import com.emsi.gestionuniv.model.user.Teacher;
+import com.emsi.gestionuniv.service.TeacherService;
+
 public class cours {
     private int id;
     private String titre;
@@ -10,6 +13,9 @@ public class cours {
     private String niveau;
     private int effectif;
     private String volumeHoraire;
+    private int credits;
+    private int enseignantId;
+    private String description;
 
     // Constructeur par défaut
     public cours() {
@@ -103,6 +109,30 @@ public class cours {
         this.volumeHoraire = volumeHoraire;
     }
 
+    public int getCredits() {
+        return credits;
+    }
+
+    public void setCredits(int credits) {
+        this.credits = credits;
+    }
+
+    public int getEnseignantId() {
+        return enseignantId;
+    }
+
+    public void setEnseignantId(int enseignantId) {
+        this.enseignantId = enseignantId;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     @Override
     public String toString() {
         return "Cours{" +
@@ -116,5 +146,14 @@ public class cours {
                 ", effectif=" + effectif +
                 ", volumeHoraire='" + volumeHoraire + '\'' +
                 '}';
+    }
+
+    public String getEnseignantFullName() {
+        TeacherService teacherService = new TeacherService();
+        Teacher teacher = teacherService.findTeacherById(this.enseignantId);
+        if (teacher != null) {
+            return teacher.getFullName();
+        }
+        return "";
     }
 }

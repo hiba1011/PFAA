@@ -59,10 +59,18 @@ public class AbscenceService {
         return Abscences;
     }
 
-    public boolean addAbsence(Abscence absence) {
+    public boolean addAbsence(Abscence absence, int enseignantId) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         boolean success = false;
+
+        // Vérification de la propriété du cours
+        com.emsi.gestionuniv.service.CoursService coursService = new com.emsi.gestionuniv.service.CoursService();
+        com.emsi.gestionuniv.model.academic.cours cours = coursService.getCoursById(absence.getCoursId());
+        if (cours == null || cours.getEnseignantId() != enseignantId) {
+            System.err.println("Tentative d'ajout d'absence sur un cours non autorisé pour cet enseignant.");
+            return false;
+        }
 
         try {
             conn = DBConnect.getConnection();
@@ -192,4 +200,75 @@ public class AbscenceService {
         return absences;
     }
 
+    public List<Abscence> getAbsencesByEtudiantId(int etudiantId) {
+        List<Abscence> absences = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBConnect.getConnection();
+            String sql = String.format("SELECT * FROM %s.%s WHERE etudiant_id = ?", DATABASE_SCHEMA, ABSCENCES_TABLE);
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, etudiantId);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Abscence absence = new Abscence();
+                absence.setId(rs.getInt("id"));
+                absence.setEtudiantId(rs.getInt("etudiant_id"));
+                absence.setCoursId(rs.getInt("cours_id"));
+                absence.setDate(rs.getDate("date"));
+                absence.setJustifiee(rs.getBoolean("justifiee"));
+                absence.setJustification(rs.getString("justification"));
+                absences.add(absence);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+        return absences;
+    }
+
+    public void ajouterAbsence(Abscence absence) {
+        Connection conn = null;
+        PreparedStatement checkStmt = null;
+        PreparedStatement insertStmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBConnect.getConnection();
+            // Vérifier s'il existe déjà une absence pour cet étudiant, ce cours et cette date
+            String checkSql = String.format(
+                "SELECT COUNT(*) FROM %s.%s WHERE etudiant_id = ? AND cours_id = ? AND date = ?",
+                DATABASE_SCHEMA, ABSCENCES_TABLE
+            );
+            checkStmt = conn.prepareStatement(checkSql);
+            checkStmt.setInt(1, absence.getEtudiantId());
+            checkStmt.setInt(2, absence.getCoursId());
+            checkStmt.setDate(3, absence.getDate());
+            rs = checkStmt.executeQuery();
+            if (rs.next() && rs.getInt(1) > 0) {
+                // Déjà existant, on n'ajoute pas
+                System.out.println("Absence déjà enregistrée pour cet étudiant, ce cours et cette date.");
+                return;
+            }
+
+            // Ajout de l'absence
+            String insertSql = String.format(
+                "INSERT INTO %s.%s (etudiant_id, cours_id, date, justifiee, justification) VALUES (?, ?, ?, ?, ?)",
+                DATABASE_SCHEMA, ABSCENCES_TABLE
+            );
+            insertStmt = conn.prepareStatement(insertSql);
+            insertStmt.setInt(1, absence.getEtudiantId());
+            insertStmt.setInt(2, absence.getCoursId());
+            insertStmt.setDate(3, absence.getDate());
+            insertStmt.setBoolean(4, absence.isJustifiee());
+            insertStmt.setString(5, absence.getJustification());
+            insertStmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, checkStmt, null);
+            closeResources(null, insertStmt, conn);
+        }
+    }
 }
