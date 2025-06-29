@@ -44,8 +44,6 @@ public class AjouterAbsenceDialog extends JDialog {
     // Composants de l'interface
     private JComboBox<Student> studentComboBox;
     private JTextField dateField;
-    private JCheckBox justifiedCheck;
-    private JTextField justificationField;
     private java.util.List<JCheckBox> studentCheckBoxes = new java.util.ArrayList<>();
 
     public AjouterAbsenceDialog(cours selectedCours, Runnable onAbsenceAdded) {
@@ -141,9 +139,6 @@ public class AjouterAbsenceDialog extends JDialog {
         contentPanel.add(createDateField());
         contentPanel.add(Box.createVerticalStrut(20));
 
-        // Checkbox justifiée
-        contentPanel.add(createJustifiedSection());
-
         return contentPanel;
     }
 
@@ -190,61 +185,6 @@ public class AjouterAbsenceDialog extends JDialog {
         panel.add(dateField, BorderLayout.CENTER);
 
         return panel;
-    }
-
-    private JPanel createJustifiedSection() {
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.setBackground(EMSI_CARD_BG);
-        mainPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
-
-        // Checkbox
-        JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        checkboxPanel.setBackground(EMSI_CARD_BG);
-
-        justifiedCheck = new JCheckBox("Absence justifiée");
-        justifiedCheck.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        justifiedCheck.setForeground(EMSI_TEXT_PRIMARY);
-        justifiedCheck.setBackground(EMSI_CARD_BG);
-        justifiedCheck.setFocusPainted(false);
-
-        // Personnaliser l'apparence du checkbox
-        justifiedCheck.setIcon(createCheckboxIcon(false));
-        justifiedCheck.setSelectedIcon(createCheckboxIcon(true));
-
-        checkboxPanel.add(justifiedCheck);
-
-        // Champ justification
-        JPanel justificationPanel = new JPanel(new BorderLayout(0, 10));
-        justificationPanel.setBackground(EMSI_CARD_BG);
-        justificationPanel.setBorder(new EmptyBorder(15, 0, 0, 0));
-
-        JLabel justificationLabel = createStyledLabel("Justification (optionnel)");
-
-        justificationField = new JTextField();
-        styleTextField(justificationField);
-        justificationField.setEnabled(false);
-        justificationField.setBackground(new Color(245, 245, 245));
-
-        // Lier avec le checkbox
-        justifiedCheck.addActionListener(e -> {
-            justificationField.setEnabled(justifiedCheck.isSelected());
-            if (justifiedCheck.isSelected()) {
-                justificationField.setBackground(Color.WHITE);
-                justificationField.requestFocus();
-            } else {
-                justificationField.setBackground(new Color(245, 245, 245));
-                justificationField.setText("");
-            }
-        });
-
-        justificationPanel.add(justificationLabel, BorderLayout.NORTH);
-        justificationPanel.add(justificationField, BorderLayout.CENTER);
-
-        mainPanel.add(checkboxPanel);
-        mainPanel.add(justificationPanel);
-
-        return mainPanel;
     }
 
     private JPanel createButtonPanel() {
@@ -405,8 +345,6 @@ public class AjouterAbsenceDialog extends JDialog {
     private void validateAndAddAbsence(ActionEvent e) {
         boolean atLeastOne = false;
         String dateStr = dateField.getText().trim();
-        boolean justified = justifiedCheck.isSelected();
-        String justification = (justified && justificationField != null) ? justificationField.getText().trim() : null;
 
         java.sql.Date absenceDate;
         try {
@@ -423,8 +361,8 @@ public class AjouterAbsenceDialog extends JDialog {
                 absence.setEtudiantId(s.getId());
                 absence.setCoursId(selectedCours.getId());
                 absence.setDate(absenceDate);
-                absence.setJustifiee(justified);
-                absence.setJustification(null); // ou new byte[0]
+                absence.setJustifiee(false); // Always false
+                absence.setJustification(null); // Always null
 
                 // Correction : Vérifier si l'absence existe déjà avant d'ajouter
                 AbscenceService abscenceService = new AbscenceService();

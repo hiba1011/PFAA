@@ -12,6 +12,8 @@ public class Abscence {
     private boolean justifiee;
     private byte[] justification;
     private Student etudiant;
+    private String justificationTexte;
+    private String action;
 
     // Constructeur par défaut
     public Abscence() {
@@ -82,6 +84,22 @@ public class Abscence {
 
     public void setEtudiant(Student etudiant) {
         this.etudiant = etudiant;
+    }
+
+    public String getJustificationTexte() {
+        return justificationTexte;
+    }
+
+    public void setJustificationTexte(String justificationTexte) {
+        this.justificationTexte = justificationTexte;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 
     @Override

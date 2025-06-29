@@ -128,20 +128,34 @@ public class NoteService {
     }
 
     public boolean saveOrUpdateNote(Note note) {
-        String sql = "UPDATE note SET controle_continu = ?, examen = ?, tp = ?, note_finale = ?, validation = ? "
+        String updateSql = "UPDATE note SET controle_continu = ?, examen = ?, tp = ?, note_finale = ?, validation = ? "
                 + "WHERE etudiant_id = ? AND cours_id = ?";
-        try (Connection conn = DBConnect.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
-            // Paramètres pour l'UPDATE
-            ps.setDouble(1, note.getControleContinu());
-            ps.setDouble(2, note.getExamen());
-            ps.setDouble(3, note.getTp());
-            ps.setDouble(4, note.getNoteFinale());
-            ps.setString(5, note.getValidation());
-            ps.setInt(6, note.getEtudiantId());
-            ps.setInt(7, note.getCoursId());
-
-            return ps.executeUpdate() > 0; // Retourne true si la mise à jour a réussi
+        String insertSql = "INSERT INTO note (etudiant_id, cours_id, controle_continu, examen, tp, note_finale, validation) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DBConnect.getConnection()) {
+            // 1. Essayer l'UPDATE
+            try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                ps.setDouble(1, note.getControleContinu());
+                ps.setDouble(2, note.getExamen());
+                ps.setDouble(3, note.getTp());
+                ps.setDouble(4, note.getNoteFinale());
+                ps.setString(5, note.getValidation());
+                ps.setInt(6, note.getEtudiantId());
+                ps.setInt(7, note.getCoursId());
+                int updated = ps.executeUpdate();
+                if (updated > 0) return true;
+            }
+            // 2. Si aucune ligne modifiée, faire un INSERT
+            try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
+                ps.setInt(1, note.getEtudiantId());
+                ps.setInt(2, note.getCoursId());
+                ps.setDouble(3, note.getControleContinu());
+                ps.setDouble(4, note.getExamen());
+                ps.setDouble(5, note.getTp());
+                ps.setDouble(6, note.getNoteFinale());
+                ps.setString(7, note.getValidation());
+                return ps.executeUpdate() > 0;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

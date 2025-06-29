@@ -14,6 +14,8 @@ import com.emsi.gestionuniv.service.TeacherService;
 import com.emsi.gestionuniv.service.CoursService;
 import com.emsi.gestionuniv.service.EtudiantService;
 import com.emsi.gestionuniv.service.NoteService;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 
 public class SaisieNotesDialog extends JDialog {
     // Palette de couleurs EMSI moderne
@@ -66,6 +68,19 @@ public class SaisieNotesDialog extends JDialog {
 
         // Appliquer le style moderne
         applyModernStyling();
+
+        // Ajout : sauvegarde automatique à chaque modification de note
+        model.addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                int row = e.getFirstRow();
+                int col = e.getColumn();
+                // Sauvegarder seulement si une colonne de note a changé
+                if (col >= 4 && col <= 6) {
+                    saveSingleNote(row);
+                }
+            }
+        });
     }
 
     private void createHeaderPanel() {
@@ -159,22 +174,25 @@ public class SaisieNotesDialog extends JDialog {
         tableHeaderPanel.add(statisticsLabel, BorderLayout.EAST);
 
         // Configuration du tableau
-        String[] columns = {"ID", "Nom", "Prénom", "Contrôle Continu (/20)", "Examen (/20)", "TP (/20)", "Note Finale", "Statut"};
+        String[] columns = {"etudiant_id", "ID", "Nom", "Prénom", "Contrôle Continu (/20)", "Examen (/20)", "TP (/20)", "Note Finale", "Statut"};
         model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int col) {
-                return col >= 3 && col <= 5; // Seules les colonnes de notes sont éditables
+                return col >= 4 && col <= 6; // Seules les colonnes de notes sont éditables
             }
-
             @Override
             public Class<?> getColumnClass(int columnIndex) {
-                // Toutes les colonnes sont traitées comme String pour éviter les erreurs de formatage
                 return String.class;
             }
         };
 
         table = new JTable(model);
         setupModernTable();
+
+        // Cacher la colonne etudiant_id
+        table.getColumnModel().getColumn(0).setMinWidth(0);
+        table.getColumnModel().getColumn(0).setMaxWidth(0);
+        table.getColumnModel().getColumn(0).setWidth(0);
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(222, 226, 230), 1));
@@ -219,19 +237,19 @@ public class SaisieNotesDialog extends JDialog {
         table.setDefaultRenderer(String.class, new ModernTableCellRenderer());
 
         // Largeurs des colonnes optimisées
-        table.getColumnModel().getColumn(0).setPreferredWidth(100);  // ID
-        table.getColumnModel().getColumn(0).setMaxWidth(120);
-        table.getColumnModel().getColumn(1).setPreferredWidth(130);  // Nom
-        table.getColumnModel().getColumn(2).setPreferredWidth(130);  // Prénom
-        table.getColumnModel().getColumn(3).setPreferredWidth(150);  // CC
-        table.getColumnModel().getColumn(4).setPreferredWidth(120);  // Examen
-        table.getColumnModel().getColumn(5).setPreferredWidth(100);  // TP
-        table.getColumnModel().getColumn(6).setPreferredWidth(100);  // Note Finale
-        table.getColumnModel().getColumn(7).setPreferredWidth(120);  // Statut
+        table.getColumnModel().getColumn(1).setPreferredWidth(100);  // ID
+        table.getColumnModel().getColumn(1).setMaxWidth(120);
+        table.getColumnModel().getColumn(2).setPreferredWidth(130);  // Nom
+        table.getColumnModel().getColumn(3).setPreferredWidth(130);  // Prénom
+        table.getColumnModel().getColumn(4).setPreferredWidth(150);  // CC
+        table.getColumnModel().getColumn(5).setPreferredWidth(120);  // Examen
+        table.getColumnModel().getColumn(6).setPreferredWidth(100);  // TP
+        table.getColumnModel().getColumn(7).setPreferredWidth(100);  // Note Finale
+        table.getColumnModel().getColumn(8).setPreferredWidth(120);  // Statut
 
         // Listener pour calcul automatique
         model.addTableModelListener(e -> {
-            if (e.getFirstRow() >= 0 && e.getColumn() >= 3 && e.getColumn() <= 5) {
+            if (e.getFirstRow() >= 0 && e.getColumn() >= 4 && e.getColumn() <= 6) {
                 SwingUtilities.invokeLater(() -> {
                     calculateFinalGrade(e.getFirstRow());
                     updateStatistics();
@@ -292,14 +310,14 @@ public class SaisieNotesDialog extends JDialog {
             }
 
             // Alignement des colonnes numériques
-            if (column >= 3 && column <= 6) {
+            if (column >= 4 && column <= 7) {
                 setHorizontalAlignment(SwingConstants.CENTER);
             } else {
                 setHorizontalAlignment(SwingConstants.LEFT);
             }
 
             // Coloration du statut et des erreurs
-            if (column == 7 && displayValue != null) {
+            if (column == 8 && displayValue != null) {
                 setHorizontalAlignment(SwingConstants.CENTER);
                 if ("Validé".equals(displayValue)) {
                     c.setForeground(SUCCESS_COLOR);
@@ -317,7 +335,7 @@ public class SaisieNotesDialog extends JDialog {
             }
 
             // Coloration des notes finales
-            if (column == 6 && displayValue != null && !displayValue.isEmpty() &&
+            if (column == 7 && displayValue != null && !displayValue.isEmpty() &&
                     !displayValue.equals("Erreur saisie") && !displayValue.equals("Note invalide")) {
                 try {
                     double note = Double.parseDouble(displayValue);
@@ -439,17 +457,31 @@ public class SaisieNotesDialog extends JDialog {
     private void loadStudents() {
         model.setRowCount(0);
         String selectedClass = (String) classCombo.getSelectedItem();
-        if (selectedClass == null) return;
+        String selectedMatiere = (String) courseCombo.getSelectedItem();
+        if (selectedClass == null || selectedMatiere == null) return;
 
         EtudiantService etudiantService = new EtudiantService();
         List<Student> students = etudiantService.getStudentsByGroupName(selectedClass);
 
+        // Récupérer l'ID du cours sélectionné
+        CoursService coursService = new CoursService();
+        int coursId = coursService.getCoursIdByIntitule(selectedMatiere);
+        NoteService noteService = new NoteService();
+
         for (Student s : students) {
+            // Chercher la note existante pour cet étudiant et ce cours
+            Note note = noteService.getNoteByStudentAndCourse(s.getId(), coursId);
+            String cc = note != null ? String.valueOf(note.getControleContinu()) : null;
+            String exam = note != null ? String.valueOf(note.getExamen()) : null;
+            String tp = note != null ? String.valueOf(note.getTp()) : null;
+            String moyenne = note != null ? String.format("%.2f", note.getNoteFinale()) : null;
+            String statut = note != null ? note.getValidation() : "En attente";
             model.addRow(new Object[]{
-                    s.getMatricule(),
-                    s.getNom(),
-                    s.getPrenom(),
-                    null, null, null, null, "En attente"
+                s.getId(), // etudiant_id (numérique, caché)
+                s.getMatricule(),
+                s.getNom(),
+                s.getPrenom(),
+                cc, exam, tp, moyenne, statut
             });
         }
 
@@ -458,15 +490,15 @@ public class SaisieNotesDialog extends JDialog {
 
     private void calculateFinalGrade(int row) {
         try {
-            Object ccObj = model.getValueAt(row, 3);
-            Object examObj = model.getValueAt(row, 4);
-            Object tpObj = model.getValueAt(row, 5);
+            Object ccObj = model.getValueAt(row, 4);
+            Object examObj = model.getValueAt(row, 5);
+            Object tpObj = model.getValueAt(row, 6);
 
             // Vérifier si au moins CC et Examen sont renseignés
             if (ccObj == null || ccObj.toString().trim().isEmpty() ||
                     examObj == null || examObj.toString().trim().isEmpty()) {
-                model.setValueAt("", row, 6);
-                model.setValueAt("En attente", row, 7);
+                model.setValueAt("", row, 7);
+                model.setValueAt("En attente", row, 8);
                 return;
             }
 
@@ -482,8 +514,8 @@ public class SaisieNotesDialog extends JDialog {
 
             // Validation des notes (0-20)
             if (cc < 0 || cc > 20 || exam < 0 || exam > 20 || (hasTp && (tp < 0 || tp > 20))) {
-                model.setValueAt("Note invalide", row, 6);
-                model.setValueAt("Erreur", row, 7);
+                model.setValueAt("Note invalide", row, 7);
+                model.setValueAt("Erreur", row, 8);
                 return;
             }
 
@@ -496,12 +528,12 @@ public class SaisieNotesDialog extends JDialog {
 
             String status = noteFinale >= 10 ? "Validé" : "Non Validé";
 
-            model.setValueAt(String.format("%.2f", noteFinale), row, 6);
-            model.setValueAt(status, row, 7);
+            model.setValueAt(String.format("%.2f", noteFinale), row, 7);
+            model.setValueAt(status, row, 8);
 
         } catch (NumberFormatException ex) {
-            model.setValueAt("Erreur saisie", row, 6);
-            model.setValueAt("Erreur", row, 7);
+            model.setValueAt("Erreur saisie", row, 7);
+            model.setValueAt("Erreur", row, 8);
         }
     }
 
@@ -511,7 +543,7 @@ public class SaisieNotesDialog extends JDialog {
         int pendingCount = 0;
 
         for (int i = 0; i < totalStudents; i++) {
-            String status = (String) model.getValueAt(i, 7);
+            String status = (String) model.getValueAt(i, 8);
             if ("Validé".equals(status)) {
                 validatedCount++;
             } else if ("En attente".equals(status)) {
@@ -543,11 +575,11 @@ public class SaisieNotesDialog extends JDialog {
 
         if (result == JOptionPane.YES_OPTION) {
             for (int i = 0; i < model.getRowCount(); i++) {
-                model.setValueAt(null, i, 3);
                 model.setValueAt(null, i, 4);
                 model.setValueAt(null, i, 5);
                 model.setValueAt(null, i, 6);
-                model.setValueAt("En attente", i, 7);
+                model.setValueAt(null, i, 7);
+                model.setValueAt("En attente", i, 8);
             }
             updateStatistics();
         }
@@ -558,10 +590,10 @@ public class SaisieNotesDialog extends JDialog {
         preview.append("Aperçu des notes:\n\n");
 
         for (int i = 0; i < model.getRowCount(); i++) {
-            String nom = (String) model.getValueAt(i, 1);
-            String prenom = (String) model.getValueAt(i, 2);
-            String noteFinale = (String) model.getValueAt(i, 6);
-            String status = (String) model.getValueAt(i, 7);
+            String nom = (String) model.getValueAt(i, 2);
+            String prenom = (String) model.getValueAt(i, 3);
+            String noteFinale = (String) model.getValueAt(i, 7);
+            String status = (String) model.getValueAt(i, 8);
 
             if (noteFinale != null && !noteFinale.isEmpty()) {
                 preview.append(String.format("%s %s: %s (%s)\n",
@@ -579,6 +611,40 @@ public class SaisieNotesDialog extends JDialog {
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
+    private void saveSingleNote(int row) {
+        String selectedMatiere = (String) courseCombo.getSelectedItem();
+        if (selectedMatiere == null) return;
+        Object idObj = model.getValueAt(row, 0); // etudiant_id (numérique)
+        Object ccObj = model.getValueAt(row, 4);
+        Object examObj = model.getValueAt(row, 5);
+        if (idObj == null || ccObj == null || examObj == null) return;
+        try {
+            int etudiantId = Integer.parseInt(idObj.toString());
+            double cc = Double.parseDouble(ccObj.toString());
+            double exam = Double.parseDouble(examObj.toString());
+            Object tpObj = model.getValueAt(row, 6);
+            Double tp = (tpObj != null && !tpObj.toString().trim().isEmpty()) ? Double.parseDouble(tpObj.toString()) : null;
+            double noteFinale = (tp == null) ? (cc + exam) / 2 : (cc + exam + tp) / 3;
+            String validation = noteFinale >= 10 ? "Validé" : "Non Validé";
+            CoursService coursService = new CoursService();
+            int coursId = coursService.getCoursIdByIntitule(selectedMatiere);
+            Note note = new Note();
+            note.setEtudiantId(etudiantId);
+            note.setCoursId(coursId);
+            note.setControleContinu(cc);
+            note.setExamen(exam);
+            note.setTp(tp != null ? tp : 0.0);
+            note.setNoteFinale(noteFinale);
+            note.setValidation(validation);
+            new NoteService().saveOrUpdateNote(note);
+            // Mettre à jour l'affichage
+            model.setValueAt(String.format("%.2f", noteFinale), row, 7);
+            model.setValueAt(validation, row, 8);
+        } catch (Exception ex) {
+            // Ignorer les erreurs de conversion
+        }
+    }
+
     private void saveNotes() {
         String selectedMatiere = (String) courseCombo.getSelectedItem();
         if (selectedMatiere == null) {
@@ -586,59 +652,43 @@ public class SaisieNotesDialog extends JDialog {
                     "Erreur", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
         // Confirmation avant sauvegarde
         int result = JOptionPane.showConfirmDialog(this,
                 "Êtes-vous sûr de vouloir enregistrer ces notes ?",
                 "Confirmation de sauvegarde", JOptionPane.YES_NO_OPTION);
-
         if (result != JOptionPane.YES_OPTION) return;
-
         try {
             CoursService coursService = new CoursService();
             int coursId = coursService.getCoursIdByIntitule(selectedMatiere);
             NoteService noteService = new NoteService();
-
             int savedCount = 0;
-
             for (int i = 0; i < model.getRowCount(); i++) {
                 try {
-                    Object idObj = model.getValueAt(i, 0);
-                    Object ccObj = model.getValueAt(i, 3);
-                    Object examObj = model.getValueAt(i, 4);
-
+                    Object idObj = model.getValueAt(i, 0); // etudiant_id (numérique)
+                    Object ccObj = model.getValueAt(i, 4);
+                    Object examObj = model.getValueAt(i, 5);
                     if (idObj == null || ccObj == null || examObj == null) continue;
-
-                    String id = idObj.toString();
+                    int etudiantId = Integer.parseInt(idObj.toString());
                     double cc = Double.parseDouble(ccObj.toString());
                     double exam = Double.parseDouble(examObj.toString());
-
-                    Object tpObj = model.getValueAt(i, 5);
-                    double tp = (tpObj != null && !tpObj.toString().trim().isEmpty()) ?
-                            Double.parseDouble(tpObj.toString()) : 0.0;
-
-                    double noteFinale = (tpObj == null || tpObj.toString().trim().isEmpty()) ?
-                            (cc + exam) / 2 : (cc + exam + tp) / 3;
-
+                    Object tpObj = model.getValueAt(i, 6);
+                    Double tp = (tpObj != null && !tpObj.toString().trim().isEmpty()) ? Double.parseDouble(tpObj.toString()) : null;
+                    double noteFinale = (tp == null) ? (cc + exam) / 2 : (cc + exam + tp) / 3;
                     String validation = noteFinale >= 10 ? "Validé" : "Non Validé";
-
                     Note note = new Note();
-                    note.setEtudiantId(Integer.parseInt(id));
+                    note.setEtudiantId(etudiantId);
                     note.setCoursId(coursId);
                     note.setControleContinu(cc);
                     note.setExamen(exam);
-                    note.setTp(tp);
+                    note.setTp(tp != null ? tp : 0.0);
                     note.setNoteFinale(noteFinale);
                     note.setValidation(validation);
-
                     noteService.saveOrUpdateNote(note);
                     savedCount++;
-
                 } catch (NumberFormatException ex) {
                     // Ignorer les lignes avec des données invalides
                 }
             }
-
             // Message de succès avec statistiques
             String message = String.format(
                     "✅ Sauvegarde réussie!\n\n" +
@@ -647,10 +697,8 @@ public class SaisieNotesDialog extends JDialog {
                             "• Classe: %s",
                     savedCount, selectedMatiere, classCombo.getSelectedItem()
             );
-
             JOptionPane.showMessageDialog(this, message, "Succès",
                     JOptionPane.INFORMATION_MESSAGE);
-
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     "Erreur lors de la sauvegarde: " + ex.getMessage(),

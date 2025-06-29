@@ -86,4 +86,14 @@ public class MessageService {
                         || (m.getReceiverId() == teacherId && "TEACHER".equalsIgnoreCase(m.getReceiverType())))
                 .count();
     }
+
+    public void notifierEtudiantConseil(int etudiantId, java.sql.Date dateAbsence) {
+        Message msg = new Message();
+        msg.setSenderId(0); // 0 = admin
+        msg.setSenderType("ADMIN");
+        msg.setReceiverId(etudiantId);
+        msg.setReceiverType("STUDENT");
+        msg.setContent("Vous êtes convoqué(e) au conseil disciplinaire suite à une absence non justifiée le " + dateAbsence + ". Merci de consulter l'administration.");
+        sendMessage(msg);
+    }
 }

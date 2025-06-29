@@ -120,12 +120,11 @@ public class EtudiantDashboard {
         backArrow.setBorderPainted(false);
         backArrow.setContentAreaFilled(false);
         backArrow.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        backArrow.setToolTipText("Retour à la page précédente");
-backArrow.addActionListener(e -> {
-    if (tabbedPane != null) {
-        tabbedPane.setSelectedIndex(0); // Retourne au dashboard principal
-    }
-});
+        backArrow.setToolTipText("Retour à la page de connexion étudiant");
+        backArrow.addActionListener(e -> {
+            frame.dispose();
+            new com.emsi.gestionuniv.view.Login.LoginEtudiant();
+        });
         backArrow.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {

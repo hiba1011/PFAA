@@ -3,6 +3,7 @@ package com.emsi.gestionuniv.view.admin;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
 import com.emsi.gestionuniv.app.MainApplication;
@@ -114,79 +115,12 @@ public class AdminDashboard extends JFrame {
     JPanel formPanel = new JPanel(new GridLayout(0, 2, 12, 12));
     formPanel.setOpaque(false);
 
-    JTextField titreField = new JTextField();
-    JComboBox<String> classeCombo = new JComboBox<>(new com.emsi.gestionuniv.service.CoursService().getAllGroupes().toArray(new String[0]));
-    JTextField cheminField = new JTextField();
-    cheminField.setEditable(false);
-    JButton choisirBtn = new JButton("Choisir PDF");
-    choisirBtn.addActionListener(e -> {
-        JFileChooser fc = new JFileChooser();
-        int res = fc.showOpenDialog(panel);
-        if (res == JFileChooser.APPROVE_OPTION) {
-            cheminField.setText(fc.getSelectedFile().getAbsolutePath());
-        }
-    });
-
-    formPanel.add(new JLabel("Titre :"));
-    formPanel.add(titreField);
-    formPanel.add(new JLabel("Classe :"));
-    formPanel.add(classeCombo);
-    formPanel.add(new JLabel("Fichier PDF :"));
-    formPanel.add(cheminField);
-    formPanel.add(new JLabel(""));
-    formPanel.add(choisirBtn);
-
-    JButton ajouterBtn = new JButton("Déposer le planning");
-    ajouterBtn.setBackground(new Color(0, 148, 68));
-    ajouterBtn.setForeground(Color.WHITE);
-    ajouterBtn.setFont(new Font("Segoe UI", Font.BOLD, 15));
-    ajouterBtn.addActionListener(e -> {
-        String titre = titreField.getText().trim();
-        String classe = (String) classeCombo.getSelectedItem();
-        String chemin = cheminField.getText().trim();
-        if (titre.isEmpty() || classe == null || chemin.isEmpty()) {
-            JOptionPane.showMessageDialog(panel, "Veuillez remplir tous les champs.");
-            return;
-        }
-        com.emsi.gestionuniv.model.academic.PlanningExamen planning = new com.emsi.gestionuniv.model.academic.PlanningExamen();
-        planning.setTitre(titre);
-        planning.setClasse(classe);
-        planning.setCheminPdf(chemin);
-        new com.emsi.gestionuniv.service.PlanningExamenService().ajouterPlanning(planning);
-        JOptionPane.showMessageDialog(panel, "Planning déposé !");
-        titreField.setText("");
-        cheminField.setText("");
-    });
-
-    JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-    btnPanel.setOpaque(false);
-    btnPanel.add(ajouterBtn);
-
-    panel.add(formPanel, BorderLayout.CENTER);
-    panel.add(btnPanel, BorderLayout.SOUTH);
-
-    return panel;
-} 
-private JPanel createEmploiDuTempsPdfPanel() {
-    JPanel panel = new JPanel(new BorderLayout());
-    panel.setBackground(Color.WHITE);
-    panel.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-    JLabel titleLabel = new JLabel("Déposer un emploi du temps (PDF)");
-    titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-    titleLabel.setForeground(new Color(0, 148, 68));
-    titleLabel.setBorder(new EmptyBorder(0, 0, 18, 0));
-    panel.add(titleLabel, BorderLayout.NORTH);
-
-    JPanel formPanel = new JPanel(new GridLayout(0, 2, 12, 12));
-    formPanel.setOpaque(false);
-
     // Sélecteur type (étudiant ou enseignant)
     JComboBox<String> typeCombo = new JComboBox<>(new String[] { "Etudiant", "Enseignant" });
     // Sélecteur classe
-    JComboBox<String> classeCombo = new JComboBox<>(new CoursService().getAllGroupes().toArray(new String[0]));
+    JComboBox<String> classeCombo = new JComboBox<>(new com.emsi.gestionuniv.service.CoursService().getAllGroupes().toArray(new String[0]));
     // Sélecteur enseignant (par ID ou nom)
-    List<Teacher> teachers = new TeacherService().getAllTeachers();
+    List<com.emsi.gestionuniv.model.user.Teacher> teachers = new com.emsi.gestionuniv.service.TeacherService().getAllTeachers();
     String[] teacherItems = teachers.stream()
         .map(t -> t.getId() + " - " + t.getPrenom() + " " + t.getNom())
         .toArray(String[]::new);
@@ -230,7 +164,7 @@ private JPanel createEmploiDuTempsPdfPanel() {
     formPanel.add(new JLabel(""));
     formPanel.add(choisirBtn);
 
-    JButton ajouterBtn = new JButton("Déposer l'emploi du temps");
+    JButton ajouterBtn = new JButton("Déposer le planning");
     ajouterBtn.setBackground(new Color(0, 148, 68));
     ajouterBtn.setForeground(Color.WHITE);
     ajouterBtn.setFont(new Font("Segoe UI", Font.BOLD, 15));
@@ -254,13 +188,46 @@ private JPanel createEmploiDuTempsPdfPanel() {
             JOptionPane.showMessageDialog(panel, "Veuillez remplir tous les champs.");
             return;
         }
-        com.emsi.gestionuniv.model.planning.EmploiDuTempsPdf emploi = new com.emsi.gestionuniv.model.planning.EmploiDuTempsPdf();
-        emploi.setType(type);
-        emploi.setCible(cible);
-        emploi.setTitre(titre);
-        emploi.setCheminPdf(chemin);
-        new com.emsi.gestionuniv.service.EmploiDuTempsPdfService().ajouterEmploi(emploi);
-        JOptionPane.showMessageDialog(panel, "Emploi du temps déposé !");
+        com.emsi.gestionuniv.model.academic.PlanningExamen planning = new com.emsi.gestionuniv.model.academic.PlanningExamen();
+        planning.setType(type);
+        planning.setCible(cible);
+        planning.setTitre(titre);
+        planning.setCheminPdf(chemin);
+        planning.setClasse(cible); // Garder la compatibilité avec l'ancien champ
+        new com.emsi.gestionuniv.service.PlanningExamenService().ajouterPlanning(planning);
+        
+        // Si c'est un planning d'examen pour une classe, l'ajouter aussi pour chaque enseignant de cette classe
+        if (type.equals("etudiant")) {
+            // Récupérer tous les cours de la classe
+            java.util.List<com.emsi.gestionuniv.model.academic.cours> coursClasse = new com.emsi.gestionuniv.service.CoursService().getAllCours();
+            java.util.Set<Integer> enseignants = new java.util.HashSet<>();
+            for (com.emsi.gestionuniv.model.academic.cours c : coursClasse) {
+                // On suppose que le champ 'niveau' ou 'filiere' ou 'intitule' ou 'code' contient le nom du groupe/classe
+                // Ici, on compare avec le nom de la classe sélectionnée
+                if (c.getNiveau() != null && c.getNiveau().equalsIgnoreCase(cible)) {
+                    enseignants.add(c.getEnseignantId());
+                } else if (c.getFiliere() != null && c.getFiliere().equalsIgnoreCase(cible)) {
+                    enseignants.add(c.getEnseignantId());
+                } else if (c.getIntitule() != null && c.getIntitule().equalsIgnoreCase(cible)) {
+                    enseignants.add(c.getEnseignantId());
+                } else if (c.getCode() != null && c.getCode().equalsIgnoreCase(cible)) {
+                    enseignants.add(c.getEnseignantId());
+                }
+            }
+            for (Integer enseignantId : enseignants) {
+                if (enseignantId != null && enseignantId > 0) {
+                    System.out.println("[DEBUG] Ajout planning d'examen pour enseignant ID=" + enseignantId + ", classe=" + cible + ", titre=" + titre);
+                    com.emsi.gestionuniv.model.academic.PlanningExamen planningEns = new com.emsi.gestionuniv.model.academic.PlanningExamen();
+                    planningEns.setType("enseignant");
+                    planningEns.setCible(String.valueOf(enseignantId));
+                    planningEns.setTitre(titre);
+                    planningEns.setCheminPdf(chemin);
+                    planningEns.setClasse(cible); // Garder la compatibilité
+                    new com.emsi.gestionuniv.service.PlanningExamenService().ajouterPlanning(planningEns);
+                }
+            }
+        }
+        JOptionPane.showMessageDialog(panel, "Planning d'examen déposé !");
         titreField.setText("");
         cheminField.setText("");
     });
@@ -274,6 +241,144 @@ private JPanel createEmploiDuTempsPdfPanel() {
 
     return panel;
 }
+
+    private JPanel createEmploiDuTempsPdfPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel titleLabel = new JLabel("Déposer un emploi du temps (PDF)");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        titleLabel.setForeground(new Color(0, 148, 68));
+        titleLabel.setBorder(new EmptyBorder(0, 0, 18, 0));
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        JPanel formPanel = new JPanel(new GridLayout(0, 2, 12, 12));
+        formPanel.setOpaque(false);
+
+        // Sélecteur type (étudiant ou enseignant)
+        JComboBox<String> typeCombo = new JComboBox<>(new String[] { "Etudiant", "Enseignant" });
+        // Sélecteur classe
+        JComboBox<String> classeCombo = new JComboBox<>(new CoursService().getAllGroupes().toArray(new String[0]));
+        // Sélecteur enseignant (par ID ou nom)
+        List<Teacher> teachers = new TeacherService().getAllTeachers();
+        String[] teacherItems = teachers.stream()
+            .map(t -> t.getId() + " - " + t.getPrenom() + " " + t.getNom())
+            .toArray(String[]::new);
+        JComboBox<String> enseignantCombo = new JComboBox<>(teacherItems);
+
+        // Sélection dynamique
+        typeCombo.addActionListener(e -> {
+            if (typeCombo.getSelectedItem().equals("Etudiant")) {
+                classeCombo.setEnabled(true);
+                enseignantCombo.setEnabled(false);
+            } else {
+                classeCombo.setEnabled(false);
+                enseignantCombo.setEnabled(true);
+            }
+        });
+        classeCombo.setEnabled(true);
+        enseignantCombo.setEnabled(false);
+
+        JTextField titreField = new JTextField();
+        JTextField cheminField = new JTextField();
+        cheminField.setEditable(false);
+        JButton choisirBtn = new JButton("Choisir PDF");
+        choisirBtn.addActionListener(e -> {
+            JFileChooser fc = new JFileChooser();
+            int res = fc.showOpenDialog(panel);
+            if (res == JFileChooser.APPROVE_OPTION) {
+                cheminField.setText(fc.getSelectedFile().getAbsolutePath());
+            }
+        });
+
+        formPanel.add(new JLabel("Type :"));
+        formPanel.add(typeCombo);
+        formPanel.add(new JLabel("Classe :"));
+        formPanel.add(classeCombo);
+        formPanel.add(new JLabel("Enseignant :"));
+        formPanel.add(enseignantCombo);
+        formPanel.add(new JLabel("Titre :"));
+        formPanel.add(titreField);
+        formPanel.add(new JLabel("Fichier PDF :"));
+        formPanel.add(cheminField);
+        formPanel.add(new JLabel(""));
+        formPanel.add(choisirBtn);
+
+        JButton ajouterBtn = new JButton("Déposer l'emploi du temps");
+        ajouterBtn.setBackground(new Color(0, 148, 68));
+        ajouterBtn.setForeground(Color.WHITE);
+        ajouterBtn.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        ajouterBtn.addActionListener(e -> {
+            String type = typeCombo.getSelectedItem().equals("Etudiant") ? "etudiant" : "enseignant";
+            String cible;
+            if (type.equals("etudiant")) {
+                cible = (String) classeCombo.getSelectedItem();
+            } else {
+                // Récupère l'ID de l'enseignant sélectionné (avant le tiret)
+                String selected = (String) enseignantCombo.getSelectedItem();
+                if (selected == null || !selected.contains(" - ")) {
+                    JOptionPane.showMessageDialog(panel, "Veuillez sélectionner un enseignant.");
+                    return;
+                }
+                cible = selected.split(" - ")[0].trim();
+            }
+            String titre = titreField.getText().trim();
+            String chemin = cheminField.getText().trim();
+            if (titre.isEmpty() || cible == null || cible.isEmpty() || chemin.isEmpty()) {
+                JOptionPane.showMessageDialog(panel, "Veuillez remplir tous les champs.");
+                return;
+            }
+            com.emsi.gestionuniv.model.planning.EmploiDuTempsPdf emploi = new com.emsi.gestionuniv.model.planning.EmploiDuTempsPdf();
+            emploi.setType(type);
+            emploi.setCible(cible);
+            emploi.setTitre(titre);
+            emploi.setCheminPdf(chemin);
+            new com.emsi.gestionuniv.service.EmploiDuTempsPdfService().ajouterEmploi(emploi);
+            // Si c'est un emploi du temps pour une classe, l'ajouter aussi pour chaque enseignant de cette classe
+            if (type.equals("etudiant")) {
+                // Récupérer tous les cours de la classe
+                java.util.List<com.emsi.gestionuniv.model.academic.cours> coursClasse = new com.emsi.gestionuniv.service.CoursService().getAllCours();
+                java.util.Set<Integer> enseignants = new java.util.HashSet<>();
+                for (com.emsi.gestionuniv.model.academic.cours c : coursClasse) {
+                    // On suppose que le champ 'niveau' ou 'filiere' ou 'intitule' ou 'code' contient le nom du groupe/classe
+                    // Ici, on compare avec le nom de la classe sélectionnée
+                    if (c.getNiveau() != null && c.getNiveau().equalsIgnoreCase(cible)) {
+                        enseignants.add(c.getEnseignantId());
+                    } else if (c.getFiliere() != null && c.getFiliere().equalsIgnoreCase(cible)) {
+                        enseignants.add(c.getEnseignantId());
+                    } else if (c.getIntitule() != null && c.getIntitule().equalsIgnoreCase(cible)) {
+                        enseignants.add(c.getEnseignantId());
+                    } else if (c.getCode() != null && c.getCode().equalsIgnoreCase(cible)) {
+                        enseignants.add(c.getEnseignantId());
+                    }
+                }
+                for (Integer enseignantId : enseignants) {
+                    if (enseignantId != null && enseignantId > 0) {
+                        System.out.println("[DEBUG] Ajout emploi du temps pour enseignant ID=" + enseignantId + ", classe=" + cible + ", titre=" + titre);
+                        com.emsi.gestionuniv.model.planning.EmploiDuTempsPdf emploiEns = new com.emsi.gestionuniv.model.planning.EmploiDuTempsPdf();
+                        emploiEns.setType("enseignant");
+                        emploiEns.setCible(String.valueOf(enseignantId));
+                        emploiEns.setTitre(titre);
+                        emploiEns.setCheminPdf(chemin);
+                        new com.emsi.gestionuniv.service.EmploiDuTempsPdfService().ajouterEmploi(emploiEns);
+                    }
+                }
+            }
+            JOptionPane.showMessageDialog(panel, "Emploi du temps déposé !");
+            titreField.setText("");
+            cheminField.setText("");
+        });
+
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        btnPanel.setOpaque(false);
+        btnPanel.add(ajouterBtn);
+
+        panel.add(formPanel, BorderLayout.CENTER);
+        panel.add(btnPanel, BorderLayout.SOUTH);
+
+        return panel;
+    }
 
     private void setUIProperties() {
         try {
@@ -395,11 +500,10 @@ private JPanel createEmploiDuTempsPdfPanel() {
                 "  Enseignants",
                 "  Cours",
                 " Absences",
-                " Conseils disciplinaires",
-                " Paramètres"
+                " Conseils disciplinaires"
         };
         String[] menuCards = {
-                "dashboard", "students", "teachers", "courses", "absences", "conseils", "settings"
+                "dashboard", "students", "teachers", "courses", "absences", "conseils"
         };
 
         menuButtons.clear();
@@ -410,11 +514,10 @@ private JPanel createEmploiDuTempsPdfPanel() {
             sidebarPanel.add(Box.createRigidArea(new Dimension(0, 12)));
         }
 
-        sidebarPanel.add(Box.createVerticalGlue());
         JButton emploiBtn = createMenuButton("Emploi du temps PDF", "emploi_du_temps_pdf", false);
-menuButtons.add(emploiBtn);
-sidebarPanel.add(emploiBtn);
-sidebarPanel.add(Box.createRigidArea(new Dimension(0, 12)));
+        menuButtons.add(emploiBtn);
+        sidebarPanel.add(emploiBtn);
+        sidebarPanel.add(Box.createRigidArea(new Dimension(0, 12)));
         // Après les autres boutons
         JButton planningBtn = createMenuButton("Planning examens", "planning_examens", false);
         menuButtons.add(planningBtn);
@@ -466,7 +569,10 @@ private JPanel createAbsencesPanel() {
     Object[][] data = {};
     DefaultTableModel model = new DefaultTableModel(data, columns) {
         @Override
-        public boolean isCellEditable(int row, int column) { return false; }
+        public boolean isCellEditable(int row, int column) {
+            // Justification et Action sont éditables
+            return column == 3 || column == 5;
+        }
     };
     JTable table = new JTable(model);
     table.setRowHeight(28);
@@ -474,6 +580,30 @@ private JPanel createAbsencesPanel() {
     table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
     table.getTableHeader().setBackground(new Color(245, 245, 245));
     table.getTableHeader().setForeground(new Color(0, 148, 68));
+    // Rendre la colonne Action éditable et affichée avec un JComboBox uniquement (non éditable)
+    JComboBox<String> actionCombo = new JComboBox<>(new String[]{"", "Blâme oral", "Conseil disciplinaire", "Exclusion"});
+    actionCombo.setEditable(false); // Empêche la saisie manuelle
+    DefaultCellEditor actionEditor = new DefaultCellEditor(actionCombo);
+    actionEditor.setClickCountToStart(1);
+    table.getColumnModel().getColumn(5).setCellEditor(actionEditor);
+    table.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
+        @Override
+        public void setValue(Object value) {
+            setText(value != null ? value.toString() : "");
+        }
+    });
+    // Rendre la colonne Justification éditable et affichée avec un JComboBox uniquement (non éditable)
+    JComboBox<String> motifCombo = new JComboBox<>(new String[]{"", "Motif administratif", "Certificat médical", "Mot justificatif"});
+    motifCombo.setEditable(false); // Empêche la saisie manuelle
+    DefaultCellEditor motifEditor = new DefaultCellEditor(motifCombo);
+    motifEditor.setClickCountToStart(1);
+    table.getColumnModel().getColumn(3).setCellEditor(motifEditor);
+    table.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
+        @Override
+        public void setValue(Object value) {
+            setText(value != null ? value.toString() : "");
+        }
+    });
     JScrollPane scrollPane = new JScrollPane(table);
     scrollPane.setBorder(BorderFactory.createLineBorder(new Color(0, 148, 68), 1));
     panel.add(scrollPane, BorderLayout.CENTER);
@@ -492,54 +622,62 @@ private JPanel createAbsencesPanel() {
             rows[i][0] = etuNom;
             rows[i][1] = coursNom;
             rows[i][2] = a.getDate();
-            rows[i][3] = (a.getJustification() != null && a.getJustification().length > 0) ? "Voir" : "";
+            rows[i][3] = (a.getJustificationTexte() != null && !a.getJustificationTexte().isEmpty()) ? a.getJustificationTexte() : "";
             rows[i][4] = a.isJustifiee() ? "Oui" : "Non";
-            rows[i][5] = (a.getJustification() != null && a.getJustification().length > 0) ? "Valider" : "";
+            rows[i][5] = (a.getAction() != null) ? a.getAction() : "";
         }
         model.setDataVector(rows, columns);
+        // Réappliquer les cell editors et renderers après chaque setDataVector
+        table.getColumnModel().getColumn(3).setCellEditor(motifEditor);
+        table.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public void setValue(Object value) {
+                setText(value != null ? value.toString() : "");
+            }
+        });
+        table.getColumnModel().getColumn(5).setCellEditor(actionEditor);
+        table.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public void setValue(Object value) {
+                setText(value != null ? value.toString() : "");
+            }
+        });
     });
 
-    // MouseListener pour voir/valider le justificatif
-    table.addMouseListener(new MouseAdapter() {
-        @Override
-        public void mouseClicked(MouseEvent e) {
-            int row = table.rowAtPoint(e.getPoint());
-            int col = table.columnAtPoint(e.getPoint());
-            if (col == 3 && "Voir".equals(table.getValueAt(row, col))) {
-                byte[] imageBytes = absencesHolder[0].get(row).getJustification();
-                if (imageBytes != null && imageBytes.length > 0) {
-                    ImageIcon icon = new ImageIcon(imageBytes);
-                    JLabel label = new JLabel(new ImageIcon(icon.getImage().getScaledInstance(350, 350, Image.SCALE_SMOOTH)));
-                    JOptionPane.showMessageDialog(panel, label, "Justificatif", JOptionPane.PLAIN_MESSAGE);
+    // Listener pour édition de justification ou action
+    model.addTableModelListener(e -> {
+        if (e.getType() == javax.swing.event.TableModelEvent.UPDATE) {
+            int row = e.getFirstRow();
+            int col = e.getColumn();
+            if (row < 0 || col < 0) return;
+            Abscence abs = absencesHolder[0].get(row);
+            if (col == 3) { // Justification motif
+                String motif = (String) model.getValueAt(row, 3);
+                abs.setJustificationTexte(motif);
+                abs.setJustifiee(motif != null && !motif.isEmpty());
+                new com.emsi.gestionuniv.service.AbscenceService().updateJustificationTexte(abs.getId(), motif);
+            } else if (col == 5) { // Action
+                String action = (String) model.getValueAt(row, 5);
+                abs.setAction(action);
+                new com.emsi.gestionuniv.service.AbscenceService().updateAction(abs.getId(), action);
+                if ("Conseil disciplinaire".equals(action)) {
+                    // Ajouter à la table des conseils disciplinaires
+                    com.emsi.gestionuniv.model.academic.ConseilDisciplinaire conseil = new com.emsi.gestionuniv.model.academic.ConseilDisciplinaire();
+                    conseil.setEtudiantId(abs.getEtudiantId());
+                    conseil.setCoursId(abs.getCoursId());
+                    conseil.setType("Conseil disciplinaire");
+                    conseil.setDate(java.time.LocalDateTime.now());
+                    conseil.setCommentaire("Conseil disciplinaire suite à une absence non justifiée le " + abs.getDate());
+                    new com.emsi.gestionuniv.service.ConseilDisciplinaireService().ajouterConseil(conseil);
+                    // Notifier l'étudiant
+                    new com.emsi.gestionuniv.service.MessageService().notifierEtudiantConseil(abs.getEtudiantId(), abs.getDate());
+                    // Rafraîchir le panneau des conseils disciplinaires
+                    if (cardPanel != null && cardLayout != null) {
+                        cardPanel.add(createConseilsPanel(), "conseils");
+                        cardLayout.show(cardPanel, "conseils");
+                    }
                 }
             }
-if (col == 5 && "Valider".equals(table.getValueAt(row, col))) {
-    Abscence abs = absencesHolder[0].get(row);
-    int result = JOptionPane.showConfirmDialog(panel, "Approuver ce justificatif ?", "Validation", JOptionPane.YES_NO_OPTION);
-    if (result == JOptionPane.YES_OPTION || result == JOptionPane.NO_OPTION) {
-        boolean approuve = (result == JOptionPane.YES_OPTION);
-        new com.emsi.gestionuniv.service.AbscenceService().validerJustificatif(abs.getId(), approuve);
-
-        // Redéclare ici les variables nécessaires
-        String selectedClasse = (String) classeCombo.getSelectedItem();
-        absencesHolder[0] = new com.emsi.gestionuniv.service.AbscenceService().getAbsencesByClasse(selectedClasse);
-        EtudiantService etuService = new EtudiantService();
-        CoursService coursServ = new CoursService();
-        Object[][] rows = new Object[absencesHolder[0].size()][columns.length];
-        for (int i = 0; i < absencesHolder[0].size(); i++) {
-            var a = absencesHolder[0].get(i);
-            String etuNom = etuService.getNomById(a.getEtudiantId());
-            String coursNom = coursServ.getIntituleById(a.getCoursId());
-            rows[i][0] = etuNom;
-            rows[i][1] = coursNom;
-            rows[i][2] = a.getDate();
-            rows[i][3] = (a.getJustification() != null && a.getJustification().length > 0) ? "Voir" : "";
-            rows[i][4] = a.isJustifiee() ? "Oui" : "Non";
-            rows[i][5] = (a.getJustification() != null && a.getJustification().length > 0) ? "Valider" : "";
-        }
-        model.setDataVector(rows, columns);
-    }
-}
         }
     });
 

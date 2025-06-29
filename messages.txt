@@ -41,3 +41,7 @@
 41|1|etudiant|1|enseignant|2025-06-28T18:08:53.682185300|fdi7a hadi
 42|1|enseignant|1|etudiant|2025-06-28T18:14:36.072191200|sbr sbr :<
 43|1|enseignant|1|etudiant|2025-06-28T18:24:05.019579400|youssef
+44|1|enseignant|1|etudiant|2025-06-29T19:52:34.319881100|salam ana mister salta3 ana daba f 9a3 lhamour
+45|1|etudiant|1|enseignant|2025-06-29T20:49:39.539427300|bonjour le jour
+46|0|ADMIN|2|STUDENT|2025-06-29T21:24:03.131662400|Vous êtes convoqué(e) au conseil disciplinaire suite à une absence non justifiée le 2025-06-29. Merci de consulter l'administration.
+47|0|ADMIN|2|STUDENT|2025-06-29T21:26:48.990917500|Vous êtes convoqué(e) au conseil disciplinaire suite à une absence non justifiée le 2025-06-29. Merci de consulter l'administration.
