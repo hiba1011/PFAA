@@ -424,7 +424,7 @@ public class AjouterAbsenceDialog extends JDialog {
                 absence.setCoursId(selectedCours.getId());
                 absence.setDate(absenceDate);
                 absence.setJustifiee(justified);
-                absence.setJustification(justification);
+                absence.setJustification(null); // ou new byte[0]
 
                 // Correction : Vérifier si l'absence existe déjà avant d'ajouter
                 AbscenceService abscenceService = new AbscenceService();

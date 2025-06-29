@@ -10,7 +10,7 @@ public class Abscence {
     private int coursId;
     private Date date;
     private boolean justifiee;
-    private String justification;
+    private byte[] justification;
     private Student etudiant;
 
     // Constructeur par défaut
@@ -18,7 +18,7 @@ public class Abscence {
     }
 
     // Constructeur avec paramètres
-    public Abscence(int id, int etudiantId, int coursId, Date date, boolean justifiee, String justification) {
+    public Abscence(int id, int etudiantId, int coursId, Date date, boolean justifiee, byte[] justification) {
         this.id = id;
         this.etudiantId = etudiantId;
         this.coursId = coursId;
@@ -68,11 +68,11 @@ public class Abscence {
         this.justifiee = justifiee;
     }
 
-    public String getJustification() {
+    public byte[] getJustification() {
         return justification;
     }
 
-    public void setJustification(String justification) {
+    public void setJustification(byte[] justification) {
         this.justification = justification;
     }
 

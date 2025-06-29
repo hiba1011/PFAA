@@ -268,6 +268,7 @@ public class CoursService {
 
     /**
      * Récupère tous les cours de la base de données
+     * 
      * @return Liste de tous les cours
      */
     public List<cours> getAllCours() {
@@ -299,9 +300,10 @@ public class CoursService {
         }
         return coursList;
     }
-    
+
     /**
      * Ajoute un nouveau cours dans la base de données
+     * 
      * @param c L'objet cours à ajouter
      * @return true si l'ajout a réussi, false sinon
      */
@@ -312,8 +314,10 @@ public class CoursService {
 
         try {
             conn = DBConnect.getConnection();
-            String sql = String.format("INSERT INTO %s.%s (code, intitule, credits, enseignant_id, filiere, niveau, effectif, volume_horaire, titre) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            String sql = String.format(
+                    "INSERT INTO %s.%s (code, intitule, credits, enseignant_id, filiere, niveau, effectif, volume_horaire, titre) "
+                            +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     DATABASE_SCHEMA, COURS_TABLE);
 
             pstmt = conn.prepareStatement(sql);
@@ -336,9 +340,10 @@ public class CoursService {
         }
         return success;
     }
-    
+
     /**
      * Supprime un cours de la base de données
+     * 
      * @param coursId ID du cours à supprimer
      * @return true si la suppression a réussi, false sinon
      */
@@ -364,13 +369,13 @@ public class CoursService {
         }
         return success;
     }
-    
+
     public int countCours() {
         int count = 0;
         String sql = "SELECT COUNT(*) FROM cours";
         try (java.sql.Connection conn = com.emsi.gestionuniv.config.DBConnect.getConnection();
-             java.sql.PreparedStatement ps = conn.prepareStatement(sql);
-             java.sql.ResultSet rs = ps.executeQuery()) {
+                java.sql.PreparedStatement ps = conn.prepareStatement(sql);
+                java.sql.ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 count = rs.getInt(1);
             }
@@ -384,7 +389,7 @@ public class CoursService {
         java.util.List<cours> list = new java.util.ArrayList<>();
         String sql = String.format("SELECT * FROM %s.%s ORDER BY id DESC LIMIT ?", DATABASE_SCHEMA, COURS_TABLE);
         try (java.sql.Connection conn = com.emsi.gestionuniv.config.DBConnect.getConnection();
-             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, n);
             try (java.sql.ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -411,10 +416,22 @@ public class CoursService {
     public static class CoursWithEnseignant extends cours {
         private String enseignantNom;
         private String enseignantPrenom;
-        public String getEnseignantNom() { return enseignantNom; }
-        public void setEnseignantNom(String nom) { this.enseignantNom = nom; }
-        public String getEnseignantPrenom() { return enseignantPrenom; }
-        public void setEnseignantPrenom(String prenom) { this.enseignantPrenom = prenom; }
+
+        public String getEnseignantNom() {
+            return enseignantNom;
+        }
+
+        public void setEnseignantNom(String nom) {
+            this.enseignantNom = nom;
+        }
+
+        public String getEnseignantPrenom() {
+            return enseignantPrenom;
+        }
+
+        public void setEnseignantPrenom(String prenom) {
+            this.enseignantPrenom = prenom;
+        }
     }
 
     public List<CoursWithEnseignant> getAllCoursWithEnseignant() {
@@ -425,7 +442,7 @@ public class CoursService {
         try {
             conn = DBConnect.getConnection();
             String sql = "SELECT c.*, e.nom AS enseignant_nom, e.prenom AS enseignant_prenom " +
-                         "FROM cours c LEFT JOIN enseignants e ON c.enseignant_id = e.id";
+                    "FROM cours c LEFT JOIN enseignants e ON c.enseignant_id = e.id";
             pstmt = conn.prepareStatement(sql);
             rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -460,7 +477,7 @@ public class CoursService {
         try {
             conn = DBConnect.getConnection();
             String sql = "SELECT c.*, e.nom AS enseignant_nom, e.prenom AS enseignant_prenom " +
-                         "FROM cours c LEFT JOIN enseignants e ON c.enseignant_id = e.id WHERE c.id = ?";
+                    "FROM cours c LEFT JOIN enseignants e ON c.enseignant_id = e.id WHERE c.id = ?";
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, coursId);
             rs = pstmt.executeQuery();
@@ -486,4 +503,50 @@ public class CoursService {
         }
         return c;
     }
+
+    public String getNomById(int id) {
+        String nomComplet = "";
+        String sql = "SELECT nom, prenom FROM etudiants WHERE id = ?";
+        try (Connection conn = DBConnect.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                nomComplet = rs.getString("nom") + " " + rs.getString("prenom");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return nomComplet;
+    }
+
+    public String getIntituleById(int id) {
+        String intitule = "";
+        String sql = "SELECT intitule FROM cours WHERE id = ?";
+        try (Connection conn = DBConnect.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                intitule = rs.getString("intitule");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return intitule;
+    }
+public List<String> getAllGroupes() {
+    List<String> groupes = new ArrayList<>();
+    try (Connection conn = DBConnect.getConnection()) {
+        String sql = "SELECT DISTINCT groupe FROM etudiants"; 
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            groupes.add(rs.getString("groupe"));
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return groupes;
+}
 }

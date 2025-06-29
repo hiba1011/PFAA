@@ -369,9 +369,8 @@ public class EtudiantService {
         try {
             conn = DBConnect.getConnection();
             String sql = String.format(
-                "INSERT INTO %s.%s (matricule, nom, prenom, email, mot_de_passe, filiere, promotion, groupe, photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                DATABASE_SCHEMA, STUDENT_TABLE
-            );
+                    "INSERT INTO %s.%s (matricule, nom, prenom, email, mot_de_passe, filiere, promotion, groupe, photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    DATABASE_SCHEMA, STUDENT_TABLE);
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, student.getMatricule());
             pstmt.setString(2, student.getNom());
@@ -438,9 +437,8 @@ public class EtudiantService {
         try {
             conn = DBConnect.getConnection();
             String sql = String.format(
-                "UPDATE %s.%s SET matricule=?, nom=?, prenom=?, email=?, mot_de_passe=?, filiere=?, promotion=?, groupe=?, photo=? WHERE id=?",
-                DATABASE_SCHEMA, STUDENT_TABLE
-            );
+                    "UPDATE %s.%s SET matricule=?, nom=?, prenom=?, email=?, mot_de_passe=?, filiere=?, promotion=?, groupe=?, photo=? WHERE id=?",
+                    DATABASE_SCHEMA, STUDENT_TABLE);
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, student.getMatricule());
             pstmt.setString(2, student.getNom());
@@ -480,9 +478,8 @@ public class EtudiantService {
         try {
             conn = DBConnect.getConnection();
             String sql = String.format(
-                "SELECT * FROM %s.%s WHERE nom LIKE ? OR prenom LIKE ? OR matricule LIKE ? OR email LIKE ?",
-                DATABASE_SCHEMA, STUDENT_TABLE
-            );
+                    "SELECT * FROM %s.%s WHERE nom LIKE ? OR prenom LIKE ? OR matricule LIKE ? OR email LIKE ?",
+                    DATABASE_SCHEMA, STUDENT_TABLE);
             pstmt = conn.prepareStatement(sql);
             String searchPattern = "%" + searchTerm + "%";
             pstmt.setString(1, searchPattern);
@@ -519,7 +516,8 @@ public class EtudiantService {
 
         try {
             conn = DBConnect.getConnection();
-            String sql = String.format("SELECT COUNT(*) FROM %s.%s WHERE matricule = ?", DATABASE_SCHEMA, STUDENT_TABLE);
+            String sql = String.format("SELECT COUNT(*) FROM %s.%s WHERE matricule = ?", DATABASE_SCHEMA,
+                    STUDENT_TABLE);
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, matricule);
 
@@ -575,8 +573,8 @@ public class EtudiantService {
         int count = 0;
         String sql = "SELECT COUNT(*) FROM etudiants";
         try (java.sql.Connection conn = com.emsi.gestionuniv.config.DBConnect.getConnection();
-             java.sql.PreparedStatement ps = conn.prepareStatement(sql);
-             java.sql.ResultSet rs = ps.executeQuery()) {
+                java.sql.PreparedStatement ps = conn.prepareStatement(sql);
+                java.sql.ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 count = rs.getInt(1);
             }
@@ -590,7 +588,7 @@ public class EtudiantService {
         java.util.List<Student> list = new java.util.ArrayList<>();
         String sql = "SELECT * FROM etudiants ORDER BY id DESC LIMIT ?";
         try (java.sql.Connection conn = com.emsi.gestionuniv.config.DBConnect.getConnection();
-             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, n);
             try (java.sql.ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -613,15 +611,18 @@ public class EtudiantService {
     }
 
     /**
-     * Récupère la liste de tous les groupes distincts présents dans la table etudiants.
+     * Récupère la liste de tous les groupes distincts présents dans la table
+     * etudiants.
+     * 
      * @return Liste des noms de groupes (String)
      */
     public List<String> getAllGroupes() {
         List<String> groupes = new ArrayList<>();
-        String sql = String.format("SELECT DISTINCT groupe FROM %s.%s WHERE groupe IS NOT NULL AND groupe <> ''", DATABASE_SCHEMA, STUDENT_TABLE);
+        String sql = String.format("SELECT DISTINCT groupe FROM %s.%s WHERE groupe IS NOT NULL AND groupe <> ''",
+                DATABASE_SCHEMA, STUDENT_TABLE);
         try (Connection conn = DBConnect.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 String groupe = rs.getString("groupe");
                 if (groupe != null && !groupe.trim().isEmpty()) {
@@ -643,8 +644,8 @@ public class EtudiantService {
         try {
             conn = DBConnect.getConnection();
             String sql = "SELECT e.* FROM etudiants e " +
-                         "JOIN inscriptions i ON e.id = i.etudiant_id " +
-                         "WHERE i.cours_id = ?";
+                    "JOIN inscriptions i ON e.id = i.etudiant_id " +
+                    "WHERE i.cours_id = ?";
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, coursId);
             rs = pstmt.executeQuery();
@@ -658,5 +659,61 @@ public class EtudiantService {
             closeResources(rs, pstmt, conn);
         }
         return students;
+    }
+
+    public String getNomById(int id) {
+        String nomComplet = "";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBConnect.getConnection();
+            String sql = "SELECT nom, prenom FROM etudiants WHERE id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, id);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                String nom = rs.getString("nom");
+                String prenom = rs.getString("prenom");
+                nomComplet = prenom + " " + nom; // Format: Prenom Nom
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la récupération du nom par ID: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+
+        return nomComplet;
+    }
+
+    public String getIntituleById(int id) {
+        String intitule = "";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBConnect.getConnection();
+            String sql = "SELECT intitule FROM cours WHERE id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, id);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                intitule = rs.getString("intitule");
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la récupération de l'intitulé du cours par ID: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            closeResources(rs, pstmt, conn);
+        }
+
+        return intitule;
     }
 }

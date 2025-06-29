@@ -8,6 +8,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +21,7 @@ import com.emsi.gestionuniv.model.academic.Note;
 import com.emsi.gestionuniv.service.AbscenceService;
 import com.emsi.gestionuniv.service.NoteService;
 import com.emsi.gestionuniv.service.CoursService;
+import com.emsi.gestionuniv.config.DBConnect;
 import com.emsi.gestionuniv.model.academic.Abscence;
 import com.emsi.gestionuniv.view.Login.EnseignantLogin;
 import com.emsi.gestionuniv.service.TeacherService.Classe;
@@ -28,7 +32,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import com.emsi.gestionuniv.model.planning.Emploi_de_temps;
-import com.emsi.gestionuniv.service.EmploiDuTempsService;
+import com.emsi.gestionuniv.service.EmploiDuTempsPdfService;
 import java.text.DecimalFormat; // Ajoute cet import en haut du fichier
 import java.io.File;
 import com.emsi.gestionuniv.model.academic.Message;
@@ -71,6 +75,8 @@ public class EnseignantDashboard extends JFrame {
 
     // Panel principal de contenu qui peut être modifié selon la navigation
     private JPanel contentPanel;
+    private int lastSeenMessageCount = -1;
+    private JPanel messagesMenuItem;
 
     /**
      * Constructeur qui initialise le tableau de bord avec les informations de
@@ -284,6 +290,19 @@ public class EnseignantDashboard extends JFrame {
 
         return headerPanel;
     }
+    private int getTotalReceivedMessagesCount() {
+    MessageService messageService = new MessageService();
+    int total = 0;
+    EtudiantService etudiantService = new EtudiantService();
+    List<Student> students = etudiantService.getStudentsByTeacherId(currentTeacherId);
+    for (Student s : students) {
+        List<Message> conv = messageService.getConversation(
+            s.getId(), "etudiant", currentTeacherId, "enseignant"
+        );
+        total += conv.size();
+    }
+    return total;
+}
 
     /**
      * Crée un bouton d'icône avec un effet de survol pour l'en-tête
@@ -478,6 +497,9 @@ public class EnseignantDashboard extends JFrame {
 
         for (String[] item : menuItems) {
             JPanel menuItem = createMenuItem(item[0], item[1]);
+            if (item[1].equals("Messages")) {
+                messagesMenuItem = menuItem;
+            }
             sidebarPanel.add(menuItem);
             sidebarPanel.add(Box.createVerticalStrut(5));
         }
@@ -503,6 +525,7 @@ public class EnseignantDashboard extends JFrame {
 
         return sidebarPanel;
     }
+
 
     private JPanel createMenuItem(String icon, String text) {
         JPanel panel = new JPanel(new BorderLayout(15, 0));
@@ -894,179 +917,96 @@ public class EnseignantDashboard extends JFrame {
 
     private void showSchedulePanel() {
         contentPanel.removeAll();
-        contentPanel.add(createSchedulePanel());
+        contentPanel.add(createPlanningTab() );
         contentPanel.revalidate();
         contentPanel.repaint();
     }
 
-    private JPanel createSchedulePanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(BACKGROUND_WHITE);
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+private JPanel createPlanningTab() {
+    JPanel panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setBackground(Color.WHITE);
+    panel.setBorder(new javax.swing.border.EmptyBorder(40, 80, 40, 80));
 
-        // En-tête
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
+    JLabel titre = new JLabel("Mon emploi du temps");
+    titre.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    titre.setForeground(new Color(0, 148, 68));
+    titre.setAlignmentX(Component.CENTER_ALIGNMENT);
+    panel.add(titre);
+    panel.add(Box.createVerticalStrut(24));
 
-        JLabel titleLabel = new JLabel("Planning des cours");
-        titleLabel.setFont(TITLE_FONT);
-        titleLabel.setForeground(EMSI_GRAY);
+    int enseignantId = currentTeacher.getId(); // ou la variable qui contient l'id de l'enseignant connecté
+    java.util.List<com.emsi.gestionuniv.model.planning.EmploiDuTempsPdf> emplois =
+        new com.emsi.gestionuniv.service.EmploiDuTempsPdfService().getEmploisEnseignantById(enseignantId);
 
-        // Sélecteur de semaine
-        JComboBox<String> weekSelector = new JComboBox<>(new String[] {
-                "Semaine 1", "Semaine 2", "Semaine 3", "Semaine 4"
-        });
-        weekSelector.setPreferredSize(new Dimension(150, 35));
-        weekSelector.setFont(SUBTITLE_FONT);
+    if (emplois.isEmpty()) {
+        JLabel emptyLabel = new JLabel("Aucun emploi du temps PDF disponible pour vous.");
+        emptyLabel.setFont(new Font("Segoe UI", Font.ITALIC, 16));
+        emptyLabel.setForeground(new Color(88, 88, 90));
+        emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(emptyLabel);
+    } else {
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setOpaque(false);
 
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-        headerPanel.add(weekSelector, BorderLayout.EAST);
+        for (com.emsi.gestionuniv.model.planning.EmploiDuTempsPdf emploi : emplois) {
+            JPanel row = new JPanel(new BorderLayout());
+            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+            row.setBackground(Color.WHITE);
+            row.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(230, 240, 230)),
+                new javax.swing.border.EmptyBorder(8, 12, 8, 12)
+            ));
 
-        // Grille du planning
-        JPanel scheduleGrid = new JPanel(new GridLayout(8, 6, 3, 3)); // Adjusted rows for more time slots
-        scheduleGrid.setBackground(EMSI_GREEN); // Use EMSI green for grid lines
+            JLabel icon = new JLabel("\uD83D\uDCC4");
+            icon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 28));
+            icon.setForeground(new Color(0, 148, 68));
+            icon.setBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 12));
+            row.add(icon, BorderLayout.WEST);
 
-        // En-têtes des colonnes (jours)
-        String[] days = { "", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi" };
-        // Adjusted hours array to include all unique time slots from the data
-        String[] hours = { "08:30-10:30", "10:00-12:00", "10:45-12:45", "14:00-16:00", "16:15-18:15", "18:30-20:30",
-                "08:30-11:30" };
+            JPanel infoPanel = new JPanel();
+            infoPanel.setOpaque(false);
+            infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+            JLabel titreLbl = new JLabel(emploi.getTitre());
+            titreLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            titreLbl.setForeground(new Color(0, 104, 56));
+            JLabel cibleLbl = new JLabel("ID Enseignant : " + emploi.getCible());
+            cibleLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            cibleLbl.setForeground(new Color(88, 88, 90));
+            infoPanel.add(titreLbl);
+            infoPanel.add(cibleLbl);
+            row.add(infoPanel, BorderLayout.CENTER);
 
-        // Map to store timetable entries by day and hour
-        Map<String, Map<String, Emploi_de_temps>> timetableMap = new HashMap<>();
-
-        // Fetch timetable data for the current teacher
-        EmploiDuTempsService emploiDuTempsService = new EmploiDuTempsService();
-        List<Emploi_de_temps> teacherTimetable = emploiDuTempsService.getEmploiDuTempsParEnseignant(currentTeacherId);
-
-        // Map English day names to French day names
-        Map<String, String> englishToFrenchDays = new HashMap<>();
-        englishToFrenchDays.put("Monday", "Lundi");
-        englishToFrenchDays.put("Tuesday", "Mardi");
-        englishToFrenchDays.put("Wednesday", "Mercredi");
-        englishToFrenchDays.put("Thursday", "Jeudi");
-        englishToFrenchDays.put("Friday", "Vendredi");
-        // Add other days if necessary (Saturday, Sunday)
-        englishToFrenchDays.put("Saturday", "Samedi");
-        englishToFrenchDays.put("Sunday", "Dimanche");
-
-        // Populate the timetable map
-        for (Emploi_de_temps entry : teacherTimetable) {
-            String englishDay = entry.getJourSemaine();
-            String frenchDay = englishToFrenchDays.get(englishDay);
-
-            System.out.println("DEBUG: Processing entry: " + entry); // Added logging
-            System.out.println("DEBUG: Mapped English day " + englishDay + " to French day " + frenchDay); // Added
-                                                                                                           // logging
-
-            if (frenchDay != null) {
-                String startTime = entry.getHeureDebut().substring(0, 5);
-                String endTime = entry.getHeureFin().substring(0, 5);
-                String timeSlot = startTime + "-" + endTime;
-
-                System.out.println("DEBUG: Processing time slot: " + timeSlot); // Added logging
-
-                timetableMap.computeIfAbsent(frenchDay, k -> new HashMap<>()).put(timeSlot, entry);
-                System.out.println(
-                        "DEBUG: Added entry to timetableMap for day " + frenchDay + " and time slot " + timeSlot); // Added
-                                                                                                                   // logging
-            } else {
-                System.out.println("DEBUG: No French mapping found for English day: " + englishDay); // Added logging
-            }
-        }
-
-        // Création de la grille
-        for (int i = 0; i < 8; i++) { // Loop through rows (including hour headers)
-            for (int j = 0; j < 6; j++) { // Loop through columns (including day headers)
-                JPanel cell = new JPanel(new BorderLayout());
-                cell.setBorder(BorderFactory.createEmptyBorder());
-                cell.setBackground(BACKGROUND_WHITE); // Set cell background to white
-
-                String currentDay = days[j]; // Get French day from grid header
-
-                if (i > 0 && j > 0) { // Only process cells within the timetable grid area (not headers)
-                    String currentTimeSlot = hours[i - 1]; // Get time slot from hours array using row index
-                    System.out.println(
-                            "DEBUG: Checking timetableMap for day " + currentDay + " and time slot " + currentTimeSlot); // Added
-                                                                                                                         // logging
-                    if (timetableMap.containsKey(currentDay)
-                            && timetableMap.get(currentDay).containsKey(currentTimeSlot)) {
-                        System.out.println("DEBUG: Timetable entry found for day " + currentDay + " and time slot "
-                                + currentTimeSlot); // Added logging
-                        Emploi_de_temps courseEntry = timetableMap.get(currentDay).get(currentTimeSlot);
-
-                        System.out.println("DEBUG: Calling getJPanel for course entry: " + courseEntry); // Added
-                                                                                                         // logging
-                        JPanel courseDetailsPanel = getJPanel(courseEntry);
-
-                        if (courseDetailsPanel != null) { // Check if panel is not null
-                            cell.setBackground(EMSI_LIGHT_GRAY); // Highlight cells with courses
-                            cell.add(courseDetailsPanel, BorderLayout.CENTER);
-                            System.out.println("DEBUG: Added courseDetailsPanel to cell for " + currentDay + " "
-                                    + currentTimeSlot); // Added logging
-                        } else {
-                            System.out.println("DEBUG: getJPanel returned null for entry: " + courseEntry); // Added
-                                                                                                            // logging
-                        }
-                    } else {
-                        System.out.println("DEBUG: No timetable entry found for day " + currentDay + " and time slot "
-                                + currentTimeSlot); // Added logging
-                    }
+            JButton openBtn = new JButton("Télécharger / Ouvrir");
+            openBtn.setBackground(new Color(0, 148, 68));
+            openBtn.setForeground(Color.WHITE);
+            openBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            openBtn.addActionListener(ev -> {
+                try {
+                    java.awt.Desktop.getDesktop().open(new java.io.File(emploi.getCheminPdf()));
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(panel, "Impossible d'ouvrir le PDF.");
                 }
+            });
 
-                if (i == 0) {
-                    // En-têtes des jours
-                    JLabel dayLabel = new JLabel(days[j], SwingConstants.CENTER);
-                    dayLabel.setFont(HEADING_FONT);
-                    dayLabel.setForeground(Color.WHITE); // White text for headers
-                    dayLabel.setBackground(EMSI_GREEN); // Green background for headers
-                    dayLabel.setOpaque(true);
-                    dayLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-                    cell.add(dayLabel, BorderLayout.CENTER);
-                } else if (j == 0) {
-                    // En-têtes des heures
-                    JLabel hourLabel = new JLabel(hours[i - 1], SwingConstants.CENTER);
-                    hourLabel.setFont(HEADING_FONT);
-                    hourLabel.setForeground(Color.WHITE); // White text for headers
-                    hourLabel.setBackground(EMSI_GREEN); // Green background for headers
-                    hourLabel.setOpaque(true);
-                    hourLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-                    cell.add(hourLabel, BorderLayout.CENTER);
-                }
+            JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+            btnPanel.setOpaque(false);
+            btnPanel.add(openBtn);
+            row.add(btnPanel, BorderLayout.EAST);
 
-                scheduleGrid.add(cell);
-            }
+            listPanel.add(row);
         }
-
-        JScrollPane scrollPane = new JScrollPane(scheduleGrid);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
-
-        // Panel des actions
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT)); // Align to the right
-        actionPanel.setOpaque(false);
-        actionPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
-
-        JButton printButton = new JButton("Imprimer le planning");
-
-        printButton.setBackground(EMSI_GREEN);
-        printButton.setForeground(Color.WHITE);
-        printButton.setFont(SUBTITLE_FONT);
-        printButton.setFocusPainted(false);
-        printButton.setBorderPainted(false);
-        printButton.setPreferredSize(new Dimension(180, 35)); // Set preferred size
-
-        actionPanel.add(printButton);
-
-        panel.add(headerPanel, BorderLayout.NORTH);
-        panel.add(scrollPane, BorderLayout.CENTER);
-        panel.add(actionPanel, BorderLayout.SOUTH);
-
-        // Ensure the panel is updated
-        panel.revalidate();
-        panel.repaint();
-
-        return panel;
+        JScrollPane scroll = new JScrollPane(listPanel);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.setBackground(Color.WHITE);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        panel.add(scroll);
     }
+
+    panel.add(Box.createVerticalGlue());
+    return panel;
+}
 
     private static JPanel getJPanel(Emploi_de_temps courseEntry) {
         System.out.println("DEBUG: Inside getJPanel for entry: " + courseEntry); // Added logging
@@ -1281,6 +1221,8 @@ Runnable updateMessages = () -> {
     panel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createEmptyBorder(10, 10, 10, 10),
             BorderFactory.createLineBorder(new Color(220, 235, 220), 2, true)));
+    
+    panel.setName("messagesPanel");
 
     return panel;
 }
@@ -1340,8 +1282,26 @@ Runnable updateMessages = () -> {
 
         panel.add(mainContent, BorderLayout.CENTER);
 
+        // Ajoute en haut de ton panel d'absences enseignant :
+JLabel dateLabel = new JLabel("Date : " + java.time.LocalDate.now().toString());
+dateLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+panel.add(dateLabel, BorderLayout.NORTH);
         return panel;
     }
+    public void ajouterAbsence(Abscence absence) {
+    try (Connection conn = DBConnect.getConnection()) {
+        String sql = "INSERT INTO Abscence (etudiant_id, cours_id, date, justifiee, justification) VALUES (?, ?, ?, ?, ?)";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setInt(1, absence.getEtudiantId());
+        ps.setInt(2, absence.getCoursId());
+        ps.setDate(3, absence.getDate());
+        ps.setBoolean(4, absence.isJustifiee());
+        ps.setBytes(5, absence.getJustification());
+        ps.executeUpdate();
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+}
 
     private JPanel createModernHeader() {
         JPanel header = new JPanel(new BorderLayout()) {
@@ -1511,78 +1471,207 @@ Runnable updateMessages = () -> {
         return card;
     }
 
-    private JPanel createModernTableSection() {
-        JPanel section = new JPanel(new BorderLayout());
-        section.setBackground(Color.WHITE);
-        section.setBorder(BorderFactory.createCompoundBorder(
-                new RoundedBorder(12, new Color(230, 230, 230)),
-                BorderFactory.createEmptyBorder(0, 0, 0, 0)
-        ));
+private JPanel createModernTableSection() {
+    JPanel section = new JPanel(new BorderLayout());
+    section.setBackground(new Color(245, 250, 245));
+    section.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
-        // En-tête du tableau
-        JLabel tableTitle = new JLabel("Liste des Absences");
-        tableTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        tableTitle.setForeground(new Color(51, 51, 51));
-        tableTitle.setBorder(BorderFactory.createEmptyBorder(20, 25, 15, 25));
-
-        // Table moderne
-        String[] columns = {"Matricule", "Nom", "Prénom", "Date", "Justifiée", "Justification", "Actions"};
-        DefaultTableModel model = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return column == 4 || column == 5;
-            }
-        };
-
-        JTable table = new JTable(model);
-        customizeModernTable(table);
-
-        // Remplir le tableau
-        AbscenceService absenceService = new AbscenceService();
-        List<Abscence> absences = absenceService.getAbsencesByCours(currentCoursId);
-        for (Abscence absence : absences) {
-            Object[] row = {
-                    absence.getEtudiant().getMatricule(),
-                    absence.getEtudiant().getNom(),
-                    absence.getEtudiant().getPrenom(),
-                    absence.getDate(),
-                    absence.isJustifiee(),
-                    absence.getJustification(),
-                    "Modifier"
-            };
-            model.addRow(row);
+    // Carte blanche avec ombre et coins arrondis
+    JPanel card = new JPanel(new BorderLayout()) {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            // Ombre douce
+            g2d.setColor(new Color(0, 0, 0, 18));
+            g2d.fillRoundRect(6, 6, getWidth() - 12, getHeight() - 12, 22, 22);
+            // Fond blanc arrondi
+            g2d.setColor(Color.WHITE);
+            g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 22, 22);
+            g2d.dispose();
         }
+    };
+    card.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+    card.setOpaque(false);
 
-        // Écouteur pour modifications
-        table.getModel().addTableModelListener(e -> {
-            if (e.getType() == TableModelEvent.UPDATE) {
-                int row = e.getFirstRow();
-                int column = e.getColumn();
-                if (column == 4 || column == 5) {
-                    Abscence absence = absences.get(row);
-                    if (column == 4) {
-                        absence.setJustifiee((Boolean) table.getValueAt(row, column));
-                    } else {
-                        absence.setJustification((String) table.getValueAt(row, column));
-                    }
-                    absenceService.updateAbsence(absence);
+    // Titre moderne
+    JLabel tableTitle = new JLabel("Liste des Absences");
+    tableTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    tableTitle.setForeground(new Color(0, 148, 68));
+    tableTitle.setBorder(BorderFactory.createEmptyBorder(24, 32, 12, 32));
+
+    // Table moderne
+    String[] columns = {"Matricule", "Nom", "Prénom", "Absent ?", "Justifiée", "Justificatif"};
+    DefaultTableModel model = new DefaultTableModel(columns, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            if (columnIndex == 3) return Boolean.class;
+            return String.class;
+        }
+    };
+
+    // Remplir le tableau
+    AbscenceService absenceService = new AbscenceService();
+    List<Abscence> absences = absenceService.getAbsencesByCours(currentCoursId);
+    for (Abscence absence : absences) {
+        Object justificatifCell = (absence.getJustification() != null && absence.getJustification().length > 0) ? "Voir" : "";
+        model.addRow(new Object[]{
+            absence.getEtudiant().getMatricule(),
+            absence.getEtudiant().getNom(),
+            absence.getEtudiant().getPrenom(),
+            true,
+            absence.isJustifiee() ? "Oui" : "Non",
+            justificatifCell
+        });
+    }
+
+    JTable table = new JTable(model);
+    table.setRowHeight(44);
+    table.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+    table.setShowGrid(false);
+    table.setIntercellSpacing(new Dimension(0, 1));
+    table.setBackground(Color.WHITE);
+    table.setSelectionBackground(new Color(0, 148, 68, 30));
+    table.setSelectionForeground(Color.BLACK);
+
+    // Header moderne vert
+    JTableHeader header = table.getTableHeader();
+    header.setFont(new Font("Segoe UI", Font.BOLD, 16));
+    header.setBackground(new Color(0, 148, 68));
+    header.setForeground(Color.WHITE);
+    header.setBorder(BorderFactory.createEmptyBorder());
+    header.setPreferredSize(new Dimension(0, 48));
+    header.setDefaultRenderer(new DefaultTableCellRenderer() {
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value,
+                                                   boolean isSelected, boolean hasFocus, int row, int column) {
+        JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        label.setBackground(new Color(0, 148, 68)); // Vert EMSI
+        label.setForeground(Color.WHITE);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+        label.setOpaque(true);
+        return label;
+    }
+});
+
+    // Style des cellules
+    table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (!isSelected) {
+                c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(242, 247, 242));
+            }
+            setBorder(BorderFactory.createEmptyBorder(0, 14, 0, 14));
+            setHorizontalAlignment(column == 0 ? SwingConstants.CENTER : SwingConstants.LEFT);
+            return c;
+        }
+    });
+
+    // MouseListener pour "Voir"
+    table.addMouseListener(new MouseAdapter() {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            int row = table.rowAtPoint(e.getPoint());
+            int col = table.columnAtPoint(e.getPoint());
+            if (col == 5 && "Voir".equals(table.getValueAt(row, col))) {
+                Abscence absence = absences.get(row);
+                byte[] imageBytes = absence.getJustification();
+                if (imageBytes != null && imageBytes.length > 0) {
+                    ImageIcon icon = new ImageIcon(imageBytes);
+                    JLabel label = new JLabel(new ImageIcon(icon.getImage().getScaledInstance(350, 350, Image.SCALE_SMOOTH)));
+                    JOptionPane.showMessageDialog(table, label, "Justificatif", JOptionPane.PLAIN_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(table, "Aucun justificatif disponible.");
                 }
             }
-        });
+        }
+    });
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        scrollPane.getViewport().setBackground(Color.WHITE);
+    JScrollPane scrollPane = new JScrollPane(table);
+    scrollPane.setBorder(BorderFactory.createEmptyBorder(0, 24, 0, 24));
+    scrollPane.getViewport().setBackground(Color.WHITE);
 
-        // Panel des boutons d'action
-        JPanel actionPanel = createModernActionPanel();
+    // Panel des boutons d'action
+    JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 18, 0));
+    actionPanel.setBackground(Color.WHITE);
 
-        section.add(tableTitle, BorderLayout.NORTH);
-        section.add(scrollPane, BorderLayout.CENTER);
-        section.add(actionPanel, BorderLayout.SOUTH);
+JButton exportButton = createModernButton("Exporter le rapport", new Color(220, 53, 69), false);
+exportButton.setBackground(new Color(220, 53, 69));
+exportButton.setForeground(Color.WHITE);
+exportButton.setOpaque(true);
+exportButton.setContentAreaFilled(true);
+exportButton.setBorderPainted(false);
 
-        return section;
+JButton addButton = createModernButton("Ajouter une absence", new Color(0, 148, 68), true);
+addButton.setBackground(new Color(0, 148, 68));
+addButton.setForeground(Color.WHITE);
+addButton.setOpaque(true);
+addButton.setContentAreaFilled(true);
+addButton.setBorderPainted(false);
+addButton.addActionListener(e -> {
+    // Récupère la liste des étudiants du cours
+    EtudiantService etudiantService = new EtudiantService();
+    java.util.List<Student> students = etudiantService.getStudentsByCoursId(currentCoursId);
+    if (students.isEmpty()) {
+        JOptionPane.showMessageDialog(section, "Aucun étudiant trouvé pour ce cours.");
+        return;
     }
+    String[] noms = students.stream()
+        .map(s -> s.getPrenom() + " " + s.getNom() + " (" + s.getMatricule() + ")")
+        .toArray(String[]::new);
+
+    String selected = (String) JOptionPane.showInputDialog(
+        section,
+        "Sélectionnez l'étudiant à marquer absent :",
+        "Ajouter une absence",
+        JOptionPane.PLAIN_MESSAGE,
+        null,
+        noms,
+        noms[0]
+    );
+
+    if (selected != null) {
+        int idx = java.util.Arrays.asList(noms).indexOf(selected);
+        Student student = students.get(idx);
+
+        // Crée et enregistre l'absence du jour
+        Abscence absence = new Abscence();
+        absence.setEtudiantId(student.getId());
+        absence.setCoursId(currentCoursId);
+        absence.setDate(java.sql.Date.valueOf(java.time.LocalDate.now()));
+        absence.setJustifiee(false);
+        absence.setJustification(null);
+        new AbscenceService().ajouterAbsence(absence);
+
+        JOptionPane.showMessageDialog(section, "Absence ajoutée pour " + selected);
+        // Rafraîchir le panneau des absences
+        contentPanel.removeAll();
+        contentPanel.add(createAbsencesPanel());
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+});
+
+
+    actionPanel.add(exportButton);
+    actionPanel.add(addButton);
+    actionPanel.setBorder(BorderFactory.createEmptyBorder(18, 24, 18, 24));
+
+    card.add(tableTitle, BorderLayout.NORTH);
+    card.add(scrollPane, BorderLayout.CENTER);
+    card.add(actionPanel, BorderLayout.SOUTH);
+
+    section.add(card, BorderLayout.CENTER);
+    return section;
+}
 
     private void customizeModernTable(JTable table) {
         table.setRowHeight(45);
@@ -1618,36 +1707,6 @@ Runnable updateMessages = () -> {
                 return c;
             }
         });
-    }
-
-    private JPanel createModernActionPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 25, 20, 25));
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
-        buttonPanel.setBackground(Color.WHITE);
-
-        // Récupération des étudiants inscrits pour le cours sélectionné
-        EtudiantService etudiantService = new EtudiantService();
-        java.util.List<Student> students = etudiantService.getStudentsByCoursId(currentCoursId);
-        System.out.println("DEBUG: Nombre d'étudiants trouvés pour le cours " + currentCoursId + " : " + students.size());
-
-        // Boutons modernes
-        JButton addButton = createModernButton(" Ajouter une absence", new Color(34, 139, 34), true);
-        JButton exportButton = createModernButton("Exporter le rapport", new Color(52, 152, 219), false);
-        addButton.setEnabled(!students.isEmpty());
-
-        addButton.addActionListener(e -> {
-            // Action d'ajout d'absence
-            // ... (votre logique existante)
-        });
-
-        buttonPanel.add(exportButton);
-        buttonPanel.add(addButton);
-        panel.add(buttonPanel, BorderLayout.EAST);
-
-        return panel;
     }
 
     private JButton createModernButton(String text, Color backgroundColor, boolean isPrimary) {
@@ -3162,4 +3221,5 @@ private void showCoursPdfListPanel() {
         contentPanel.revalidate();
         contentPanel.repaint();
     }
+    
 }

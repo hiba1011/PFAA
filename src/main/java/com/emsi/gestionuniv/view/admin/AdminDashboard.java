@@ -15,10 +15,12 @@ import com.emsi.gestionuniv.service.TeacherService;
 import com.emsi.gestionuniv.service.CoursService;
 import com.emsi.gestionuniv.model.user.Student;
 import com.emsi.gestionuniv.model.user.Teacher;
+import com.emsi.gestionuniv.model.academic.Abscence;
 import com.emsi.gestionuniv.model.academic.cours;
 
 /**
- * Tableau de bord administrateur avec un style moderne inspiré du dashboard enseignant.
+ * Tableau de bord administrateur avec un style moderne inspiré du dashboard
+ * enseignant.
  */
 public class AdminDashboard extends JFrame {
     // Couleurs et polices inspirées du dashboard enseignant
@@ -87,12 +89,191 @@ public class AdminDashboard extends JFrame {
         cardPanel.add(createTeachersPanel(), "teachers");
         cardPanel.add(createCoursesPanel(), "courses");
         cardPanel.add(createSettingsPanel(), "settings");
+        cardPanel.add(createConseilsPanel(), "conseils");
+        cardPanel.add(createAbsencesPanel(), "absences");
+        cardPanel.add(createEmploiDuTempsPdfPanel(), "emploi_du_temps_pdf");
 
         mainPanel.add(cardPanel, BorderLayout.CENTER);
 
         setContentPane(mainPanel);
         setVisible(true);
+        cardPanel.add(createPlanningExamensPanel(), "planning_examens");
+        
     }
+   private JPanel createPlanningExamensPanel() {
+    JPanel panel = new JPanel(new BorderLayout());
+    panel.setBackground(Color.WHITE);
+    panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+    JLabel titleLabel = new JLabel("Déposer un planning d'examen (PDF)");
+    titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    titleLabel.setForeground(new Color(0, 148, 68));
+    titleLabel.setBorder(new EmptyBorder(0, 0, 18, 0));
+    panel.add(titleLabel, BorderLayout.NORTH);
+
+    JPanel formPanel = new JPanel(new GridLayout(0, 2, 12, 12));
+    formPanel.setOpaque(false);
+
+    JTextField titreField = new JTextField();
+    JComboBox<String> classeCombo = new JComboBox<>(new com.emsi.gestionuniv.service.CoursService().getAllGroupes().toArray(new String[0]));
+    JTextField cheminField = new JTextField();
+    cheminField.setEditable(false);
+    JButton choisirBtn = new JButton("Choisir PDF");
+    choisirBtn.addActionListener(e -> {
+        JFileChooser fc = new JFileChooser();
+        int res = fc.showOpenDialog(panel);
+        if (res == JFileChooser.APPROVE_OPTION) {
+            cheminField.setText(fc.getSelectedFile().getAbsolutePath());
+        }
+    });
+
+    formPanel.add(new JLabel("Titre :"));
+    formPanel.add(titreField);
+    formPanel.add(new JLabel("Classe :"));
+    formPanel.add(classeCombo);
+    formPanel.add(new JLabel("Fichier PDF :"));
+    formPanel.add(cheminField);
+    formPanel.add(new JLabel(""));
+    formPanel.add(choisirBtn);
+
+    JButton ajouterBtn = new JButton("Déposer le planning");
+    ajouterBtn.setBackground(new Color(0, 148, 68));
+    ajouterBtn.setForeground(Color.WHITE);
+    ajouterBtn.setFont(new Font("Segoe UI", Font.BOLD, 15));
+    ajouterBtn.addActionListener(e -> {
+        String titre = titreField.getText().trim();
+        String classe = (String) classeCombo.getSelectedItem();
+        String chemin = cheminField.getText().trim();
+        if (titre.isEmpty() || classe == null || chemin.isEmpty()) {
+            JOptionPane.showMessageDialog(panel, "Veuillez remplir tous les champs.");
+            return;
+        }
+        com.emsi.gestionuniv.model.academic.PlanningExamen planning = new com.emsi.gestionuniv.model.academic.PlanningExamen();
+        planning.setTitre(titre);
+        planning.setClasse(classe);
+        planning.setCheminPdf(chemin);
+        new com.emsi.gestionuniv.service.PlanningExamenService().ajouterPlanning(planning);
+        JOptionPane.showMessageDialog(panel, "Planning déposé !");
+        titreField.setText("");
+        cheminField.setText("");
+    });
+
+    JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+    btnPanel.setOpaque(false);
+    btnPanel.add(ajouterBtn);
+
+    panel.add(formPanel, BorderLayout.CENTER);
+    panel.add(btnPanel, BorderLayout.SOUTH);
+
+    return panel;
+} 
+private JPanel createEmploiDuTempsPdfPanel() {
+    JPanel panel = new JPanel(new BorderLayout());
+    panel.setBackground(Color.WHITE);
+    panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+    JLabel titleLabel = new JLabel("Déposer un emploi du temps (PDF)");
+    titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    titleLabel.setForeground(new Color(0, 148, 68));
+    titleLabel.setBorder(new EmptyBorder(0, 0, 18, 0));
+    panel.add(titleLabel, BorderLayout.NORTH);
+
+    JPanel formPanel = new JPanel(new GridLayout(0, 2, 12, 12));
+    formPanel.setOpaque(false);
+
+    // Sélecteur type (étudiant ou enseignant)
+    JComboBox<String> typeCombo = new JComboBox<>(new String[] { "Etudiant", "Enseignant" });
+    // Sélecteur classe
+    JComboBox<String> classeCombo = new JComboBox<>(new CoursService().getAllGroupes().toArray(new String[0]));
+    // Sélecteur enseignant (par ID ou nom)
+    List<Teacher> teachers = new TeacherService().getAllTeachers();
+    String[] teacherItems = teachers.stream()
+        .map(t -> t.getId() + " - " + t.getPrenom() + " " + t.getNom())
+        .toArray(String[]::new);
+    JComboBox<String> enseignantCombo = new JComboBox<>(teacherItems);
+
+    // Sélection dynamique
+    typeCombo.addActionListener(e -> {
+        if (typeCombo.getSelectedItem().equals("Etudiant")) {
+            classeCombo.setEnabled(true);
+            enseignantCombo.setEnabled(false);
+        } else {
+            classeCombo.setEnabled(false);
+            enseignantCombo.setEnabled(true);
+        }
+    });
+    classeCombo.setEnabled(true);
+    enseignantCombo.setEnabled(false);
+
+    JTextField titreField = new JTextField();
+    JTextField cheminField = new JTextField();
+    cheminField.setEditable(false);
+    JButton choisirBtn = new JButton("Choisir PDF");
+    choisirBtn.addActionListener(e -> {
+        JFileChooser fc = new JFileChooser();
+        int res = fc.showOpenDialog(panel);
+        if (res == JFileChooser.APPROVE_OPTION) {
+            cheminField.setText(fc.getSelectedFile().getAbsolutePath());
+        }
+    });
+
+    formPanel.add(new JLabel("Type :"));
+    formPanel.add(typeCombo);
+    formPanel.add(new JLabel("Classe :"));
+    formPanel.add(classeCombo);
+    formPanel.add(new JLabel("Enseignant :"));
+    formPanel.add(enseignantCombo);
+    formPanel.add(new JLabel("Titre :"));
+    formPanel.add(titreField);
+    formPanel.add(new JLabel("Fichier PDF :"));
+    formPanel.add(cheminField);
+    formPanel.add(new JLabel(""));
+    formPanel.add(choisirBtn);
+
+    JButton ajouterBtn = new JButton("Déposer l'emploi du temps");
+    ajouterBtn.setBackground(new Color(0, 148, 68));
+    ajouterBtn.setForeground(Color.WHITE);
+    ajouterBtn.setFont(new Font("Segoe UI", Font.BOLD, 15));
+    ajouterBtn.addActionListener(e -> {
+        String type = typeCombo.getSelectedItem().equals("Etudiant") ? "etudiant" : "enseignant";
+        String cible;
+        if (type.equals("etudiant")) {
+            cible = (String) classeCombo.getSelectedItem();
+        } else {
+            // Récupère l'ID de l'enseignant sélectionné (avant le tiret)
+            String selected = (String) enseignantCombo.getSelectedItem();
+            if (selected == null || !selected.contains(" - ")) {
+                JOptionPane.showMessageDialog(panel, "Veuillez sélectionner un enseignant.");
+                return;
+            }
+            cible = selected.split(" - ")[0].trim();
+        }
+        String titre = titreField.getText().trim();
+        String chemin = cheminField.getText().trim();
+        if (titre.isEmpty() || cible == null || cible.isEmpty() || chemin.isEmpty()) {
+            JOptionPane.showMessageDialog(panel, "Veuillez remplir tous les champs.");
+            return;
+        }
+        com.emsi.gestionuniv.model.planning.EmploiDuTempsPdf emploi = new com.emsi.gestionuniv.model.planning.EmploiDuTempsPdf();
+        emploi.setType(type);
+        emploi.setCible(cible);
+        emploi.setTitre(titre);
+        emploi.setCheminPdf(chemin);
+        new com.emsi.gestionuniv.service.EmploiDuTempsPdfService().ajouterEmploi(emploi);
+        JOptionPane.showMessageDialog(panel, "Emploi du temps déposé !");
+        titreField.setText("");
+        cheminField.setText("");
+    });
+
+    JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+    btnPanel.setOpaque(false);
+    btnPanel.add(ajouterBtn);
+
+    panel.add(formPanel, BorderLayout.CENTER);
+    panel.add(btnPanel, BorderLayout.SOUTH);
+
+    return panel;
+}
 
     private void setUIProperties() {
         try {
@@ -114,8 +295,7 @@ public class AdminDashboard extends JFrame {
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 GradientPaint gradient = new GradientPaint(
                         0, 0, EMSI_GREEN,
-                        getWidth(), 0, EMSI_DARK_GREEN
-                );
+                        getWidth(), 0, EMSI_DARK_GREEN);
                 g2d.setPaint(gradient);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
                 g2d.setColor(new Color(255, 255, 255, 20));
@@ -130,7 +310,7 @@ public class AdminDashboard extends JFrame {
         JButton backButton = new JButton("\u2190"); // Unicode flèche gauche
         backButton.setFont(new Font("Segoe UI", Font.BOLD, 22));
         backButton.setForeground(Color.WHITE);
-        backButton.setBackground(new Color(0,0,0,0));
+        backButton.setBackground(new Color(0, 0, 0, 0));
         backButton.setFocusPainted(false);
         backButton.setBorderPainted(false);
         backButton.setContentAreaFilled(false);
@@ -165,8 +345,7 @@ public class AdminDashboard extends JFrame {
                     this,
                     "Voulez-vous vraiment vous déconnecter?",
                     "Confirmation",
-                    JOptionPane.YES_NO_OPTION
-            );
+                    JOptionPane.YES_NO_OPTION);
             if (response == JOptionPane.YES_OPTION) {
                 new MainApplication().main(new String[0]);
                 dispose();
@@ -215,10 +394,12 @@ public class AdminDashboard extends JFrame {
                 "  Étudiants",
                 "  Enseignants",
                 "  Cours",
+                " Absences",
+                " Conseils disciplinaires",
                 " Paramètres"
         };
         String[] menuCards = {
-                "dashboard", "students", "teachers", "courses", "settings"
+                "dashboard", "students", "teachers", "courses", "absences", "conseils", "settings"
         };
 
         menuButtons.clear();
@@ -230,6 +411,15 @@ public class AdminDashboard extends JFrame {
         }
 
         sidebarPanel.add(Box.createVerticalGlue());
+        JButton emploiBtn = createMenuButton("Emploi du temps PDF", "emploi_du_temps_pdf", false);
+menuButtons.add(emploiBtn);
+sidebarPanel.add(emploiBtn);
+sidebarPanel.add(Box.createRigidArea(new Dimension(0, 12)));
+        // Après les autres boutons
+        JButton planningBtn = createMenuButton("Planning examens", "planning_examens", false);
+        menuButtons.add(planningBtn);
+        sidebarPanel.add(planningBtn);
+        sidebarPanel.add(Box.createRigidArea(new Dimension(0, 12)));
 
         JButton logoutButton = createMenuButton("Déconnexion", "logout", false);
         logoutButton.addActionListener(e -> {
@@ -237,8 +427,7 @@ public class AdminDashboard extends JFrame {
                     this,
                     "Voulez-vous vraiment vous déconnecter?",
                     "Confirmation",
-                    JOptionPane.YES_NO_OPTION
-            );
+                    JOptionPane.YES_NO_OPTION);
             if (response == JOptionPane.YES_OPTION) {
                 new MainApplication().main(new String[0]);
                 dispose();
@@ -248,6 +437,118 @@ public class AdminDashboard extends JFrame {
 
         return sidebarPanel;
     }
+private JPanel createAbsencesPanel() {
+    JPanel panel = new JPanel(new BorderLayout());
+    panel.setBackground(Color.WHITE);
+    panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+    JLabel titleLabel = new JLabel("Gestion des Absences par Classe");
+    titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+    titleLabel.setForeground(new Color(0, 148, 68));
+    titleLabel.setBorder(new EmptyBorder(0, 0, 18, 0));
+    panel.add(titleLabel, BorderLayout.NORTH);
+
+    // Sélecteur de classe
+    CoursService coursService = new CoursService();
+    java.util.List<String> classes = coursService.getAllGroupes();
+    final java.util.List<com.emsi.gestionuniv.model.academic.Abscence>[] absencesHolder = new java.util.List[]{new ArrayList<>()};
+    JComboBox<String> classeCombo = new JComboBox<>(classes.toArray(new String[0]));
+    classeCombo.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+    classeCombo.setPreferredSize(new Dimension(220, 32));
+    JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+    topPanel.setOpaque(false);
+    topPanel.add(new JLabel("Classe : "));
+    topPanel.add(classeCombo);
+    panel.add(topPanel, BorderLayout.BEFORE_FIRST_LINE);
+
+    // Tableau des absences
+    String[] columns = { "Étudiant", "Cours", "Date", "Justification", "Justifiée", "Action" };
+    Object[][] data = {};
+    DefaultTableModel model = new DefaultTableModel(data, columns) {
+        @Override
+        public boolean isCellEditable(int row, int column) { return false; }
+    };
+    JTable table = new JTable(model);
+    table.setRowHeight(28);
+    table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+    table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
+    table.getTableHeader().setBackground(new Color(245, 245, 245));
+    table.getTableHeader().setForeground(new Color(0, 148, 68));
+    JScrollPane scrollPane = new JScrollPane(table);
+    scrollPane.setBorder(BorderFactory.createLineBorder(new Color(0, 148, 68), 1));
+    panel.add(scrollPane, BorderLayout.CENTER);
+
+    // Rafraîchir le tableau selon la classe sélectionnée
+    classeCombo.addActionListener(e -> {
+        String selectedClasse = (String) classeCombo.getSelectedItem();
+        absencesHolder[0] = new com.emsi.gestionuniv.service.AbscenceService().getAbsencesByClasse(selectedClasse);
+        EtudiantService etuService = new EtudiantService();
+        CoursService coursServ = new CoursService();
+        Object[][] rows = new Object[absencesHolder[0].size()][columns.length];
+        for (int i = 0; i < absencesHolder[0].size(); i++) {
+            var a = absencesHolder[0].get(i);
+            String etuNom = etuService.getNomById(a.getEtudiantId());
+            String coursNom = coursServ.getIntituleById(a.getCoursId());
+            rows[i][0] = etuNom;
+            rows[i][1] = coursNom;
+            rows[i][2] = a.getDate();
+            rows[i][3] = (a.getJustification() != null && a.getJustification().length > 0) ? "Voir" : "";
+            rows[i][4] = a.isJustifiee() ? "Oui" : "Non";
+            rows[i][5] = (a.getJustification() != null && a.getJustification().length > 0) ? "Valider" : "";
+        }
+        model.setDataVector(rows, columns);
+    });
+
+    // MouseListener pour voir/valider le justificatif
+    table.addMouseListener(new MouseAdapter() {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            int row = table.rowAtPoint(e.getPoint());
+            int col = table.columnAtPoint(e.getPoint());
+            if (col == 3 && "Voir".equals(table.getValueAt(row, col))) {
+                byte[] imageBytes = absencesHolder[0].get(row).getJustification();
+                if (imageBytes != null && imageBytes.length > 0) {
+                    ImageIcon icon = new ImageIcon(imageBytes);
+                    JLabel label = new JLabel(new ImageIcon(icon.getImage().getScaledInstance(350, 350, Image.SCALE_SMOOTH)));
+                    JOptionPane.showMessageDialog(panel, label, "Justificatif", JOptionPane.PLAIN_MESSAGE);
+                }
+            }
+if (col == 5 && "Valider".equals(table.getValueAt(row, col))) {
+    Abscence abs = absencesHolder[0].get(row);
+    int result = JOptionPane.showConfirmDialog(panel, "Approuver ce justificatif ?", "Validation", JOptionPane.YES_NO_OPTION);
+    if (result == JOptionPane.YES_OPTION || result == JOptionPane.NO_OPTION) {
+        boolean approuve = (result == JOptionPane.YES_OPTION);
+        new com.emsi.gestionuniv.service.AbscenceService().validerJustificatif(abs.getId(), approuve);
+
+        // Redéclare ici les variables nécessaires
+        String selectedClasse = (String) classeCombo.getSelectedItem();
+        absencesHolder[0] = new com.emsi.gestionuniv.service.AbscenceService().getAbsencesByClasse(selectedClasse);
+        EtudiantService etuService = new EtudiantService();
+        CoursService coursServ = new CoursService();
+        Object[][] rows = new Object[absencesHolder[0].size()][columns.length];
+        for (int i = 0; i < absencesHolder[0].size(); i++) {
+            var a = absencesHolder[0].get(i);
+            String etuNom = etuService.getNomById(a.getEtudiantId());
+            String coursNom = coursServ.getIntituleById(a.getCoursId());
+            rows[i][0] = etuNom;
+            rows[i][1] = coursNom;
+            rows[i][2] = a.getDate();
+            rows[i][3] = (a.getJustification() != null && a.getJustification().length > 0) ? "Voir" : "";
+            rows[i][4] = a.isJustifiee() ? "Oui" : "Non";
+            rows[i][5] = (a.getJustification() != null && a.getJustification().length > 0) ? "Valider" : "";
+        }
+        model.setDataVector(rows, columns);
+    }
+}
+        }
+    });
+
+    // Déclenche le chargement initial
+    if (classeCombo.getItemCount() > 0)
+        classeCombo.setSelectedIndex(0);
+
+    return panel;
+}
 
     private JButton createMenuButton(String text, String card, boolean selected) {
         JButton button = new JButton(text) {
@@ -266,9 +567,16 @@ public class AdminDashboard extends JFrame {
                 setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
                 addMouseListener(new MouseAdapter() {
                     @Override
-                    public void mouseEntered(MouseEvent e) { hovering = true; repaint(); }
+                    public void mouseEntered(MouseEvent e) {
+                        hovering = true;
+                        repaint();
+                    }
+
                     @Override
-                    public void mouseExited(MouseEvent e) { hovering = false; repaint(); }
+                    public void mouseExited(MouseEvent e) {
+                        hovering = false;
+                        repaint();
+                    }
                 });
             }
 
@@ -298,14 +606,17 @@ public class AdminDashboard extends JFrame {
             }
         };
         button.addActionListener(e -> {
-            if ("logout".equals(card)) return;
+            if ("logout".equals(card))
+                return;
             for (JButton b : menuButtons) {
                 if (b == button) {
                     ((JButton) b).putClientProperty("selected", true);
-                    if (b instanceof JButton) ((JButton) b).setSelected(true);
+                    if (b instanceof JButton)
+                        ((JButton) b).setSelected(true);
                 } else {
                     ((JButton) b).putClientProperty("selected", false);
-                    if (b instanceof JButton) ((JButton) b).setSelected(false);
+                    if (b instanceof JButton)
+                        ((JButton) b).setSelected(false);
                 }
             }
             cardLayout.show(cardPanel, card);
@@ -346,8 +657,10 @@ public class AdminDashboard extends JFrame {
         int nbEnseignants = teacherService.countTeachers();
         int nbCours = coursService.countCours();
 
-        statsPanel.add(createModernStatCard("Étudiants", String.valueOf(nbEtudiants), "👨‍🎓", new Color(16, 185, 129)));
-        statsPanel.add(createModernStatCard("Enseignants", String.valueOf(nbEnseignants), "👩‍🏫", new Color(59, 130, 246)));
+        statsPanel
+                .add(createModernStatCard("Étudiants", String.valueOf(nbEtudiants), "👨‍🎓", new Color(16, 185, 129)));
+        statsPanel.add(
+                createModernStatCard("Enseignants", String.valueOf(nbEnseignants), "👩‍🏫", new Color(59, 130, 246)));
         statsPanel.add(createModernStatCard("Cours", String.valueOf(nbCours), "📚", new Color(251, 191, 36)));
 
         // Section top (titre + stats)
@@ -365,36 +678,36 @@ public class AdminDashboard extends JFrame {
         List<Object[]> activities = new ArrayList<>();
         if (!derniersEtudiants.isEmpty()) {
             Student s = derniersEtudiants.get(0);
-            activities.add(new Object[]{"Ajout d'étudiant", s.getPrenom() + " " + s.getNom(), "Aujourd'hui"});
+            activities.add(new Object[] { "Ajout d'étudiant", s.getPrenom() + " " + s.getNom(), "Aujourd'hui" });
         }
         if (!derniersCours.isEmpty()) {
             cours c = derniersCours.get(0);
-            activities.add(new Object[]{"Ajout de cours", c.getIntitule(), "Aujourd'hui"});
+            activities.add(new Object[] { "Ajout de cours", c.getIntitule(), "Aujourd'hui" });
         }
         if (!derniersEnseignants.isEmpty()) {
             Teacher t = derniersEnseignants.get(0);
-            activities.add(new Object[]{"Ajout d'enseignant", t.getPrenom() + " " + t.getNom(), "Hier"});
+            activities.add(new Object[] { "Ajout d'enseignant", t.getPrenom() + " " + t.getNom(), "Hier" });
         }
         if (derniersEtudiants.size() > 1) {
             Student s2 = derniersEtudiants.get(1);
-            activities.add(new Object[]{"Ajout d'étudiant", s2.getPrenom() + " " + s2.getNom(), "Hier"});
+            activities.add(new Object[] { "Ajout d'étudiant", s2.getPrenom() + " " + s2.getNom(), "Hier" });
         }
         if (derniersCours.size() > 1) {
             cours c2 = derniersCours.get(1);
-            activities.add(new Object[]{"Ajout de cours", c2.getIntitule(), "Avant-hier"});
+            activities.add(new Object[] { "Ajout de cours", c2.getIntitule(), "Avant-hier" });
         }
 
         DefaultTableModel tableModel = new DefaultTableModel(
                 activities.toArray(new Object[0][0]),
-                new String[] {"Action", "Description", "Date"}
-        );
+                new String[] { "Action", "Description", "Date" });
 
         JTable activityTable = new JTable(tableModel) {
             @Override
             public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
                 Component c = super.prepareRenderer(renderer, row, column);
                 if (!isRowSelected(row)) {
-                    c.setBackground(row % 2 == 0 ? new Color(250, 250, 250) : new Color(236, 253, 245)); // Lignes zébrées
+                    c.setBackground(row % 2 == 0 ? new Color(250, 250, 250) : new Color(236, 253, 245)); // Lignes
+                                                                                                         // zébrées
                 } else {
                     c.setBackground(new Color(209, 250, 229));
                 }
@@ -404,11 +717,13 @@ public class AdminDashboard extends JFrame {
                 }
                 return c;
             }
+            
         };
+        
         activityTable.setRowHeight(36);
         activityTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
         activityTable.getTableHeader().setBackground(new Color(220, 255, 220)); // Vert très clair
-        activityTable.getTableHeader().setForeground(new Color(0, 104, 56));   // Vert foncé EMSI
+        activityTable.getTableHeader().setForeground(new Color(0, 104, 56)); // Vert foncé EMSI
         activityTable.getTableHeader().setPreferredSize(new Dimension(100, 36)); // Hauteur de l'en-tête
         activityTable.setShowGrid(false);
         activityTable.setIntercellSpacing(new Dimension(0, 0));
@@ -427,8 +742,7 @@ public class AdminDashboard extends JFrame {
                 "Dernières activités",
                 1,
                 0,
-                new Font("Segoe UI", Font.BOLD, 15)
-        ));
+                new Font("Segoe UI", Font.BOLD, 15)));
         tableScrollPane.setBackground(Color.WHITE);
         tableScrollPane.setPreferredSize(new Dimension(0, 220));
 
@@ -512,11 +826,19 @@ public class AdminDashboard extends JFrame {
             {
                 addMouseListener(new MouseAdapter() {
                     @Override
-                    public void mouseEntered(MouseEvent e) { hovering = true; repaint(); }
+                    public void mouseEntered(MouseEvent e) {
+                        hovering = true;
+                        repaint();
+                    }
+
                     @Override
-                    public void mouseExited(MouseEvent e) { hovering = false; repaint(); }
+                    public void mouseExited(MouseEvent e) {
+                        hovering = false;
+                        repaint();
+                    }
                 });
             }
+
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
@@ -552,21 +874,21 @@ public class AdminDashboard extends JFrame {
         panel.add(tablePanel, BorderLayout.CENTER);
         return panel;
     }
-    
+
     private JPanel createStudentsTablePanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(EMSI_LIGHT_GRAY);
         panel.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(EMSI_GREEN, 2),
-            "Liste des Étudiants",
-            0, 0,
-            new Font("Segoe UI", Font.BOLD, 14),
-            EMSI_GREEN
-        ));
-        
+                BorderFactory.createLineBorder(EMSI_GREEN, 2),
+                "Liste des Étudiants",
+                0, 0,
+                new Font("Segoe UI", Font.BOLD, 14),
+                EMSI_GREEN));
+
         // Récupération des étudiants
-        java.util.List<com.emsi.gestionuniv.model.user.Student> students = new com.emsi.gestionuniv.service.EtudiantService().getAllStudents();
-        String[] columns = {"Matricule", "Prénom", "Nom", "Email", "Filière", "Promotion", "Groupe"};
+        java.util.List<com.emsi.gestionuniv.model.user.Student> students = new com.emsi.gestionuniv.service.EtudiantService()
+                .getAllStudents();
+        String[] columns = { "Matricule", "Prénom", "Nom", "Email", "Filière", "Promotion", "Groupe" };
         Object[][] data = new Object[students.size()][columns.length];
         for (int i = 0; i < students.size(); i++) {
             var s = students.get(i);
@@ -580,7 +902,9 @@ public class AdminDashboard extends JFrame {
         }
         javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(data, columns) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
         JTable table = new JTable(model);
         table.setRowHeight(28);
@@ -591,27 +915,28 @@ public class AdminDashboard extends JFrame {
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(EMSI_GREEN, 1));
         panel.add(scrollPane, BorderLayout.CENTER);
-        
+
         // Stocker la référence de la table pour pouvoir la rafraîchir
         this.studentsTable = table;
         this.studentsTableModel = model;
-        
+
         return panel;
     }
-    
+
     private void refreshStudentsTable() {
         if (studentsTableModel != null) {
-            java.util.List<com.emsi.gestionuniv.model.user.Student> students = new com.emsi.gestionuniv.service.EtudiantService().getAllStudents();
+            java.util.List<com.emsi.gestionuniv.model.user.Student> students = new com.emsi.gestionuniv.service.EtudiantService()
+                    .getAllStudents();
             studentsTableModel.setRowCount(0);
             for (var s : students) {
                 Object[] row = {
-                    s.getMatricule(),
-                    s.getPrenom(),
-                    s.getNom(),
-                    s.getEmail(),
-                    s.getFiliere(),
-                    s.getPromotion(),
-                    s.getGroupe()
+                        s.getMatricule(),
+                        s.getPrenom(),
+                        s.getNom(),
+                        s.getEmail(),
+                        s.getFiliere(),
+                        s.getPromotion(),
+                        s.getGroupe()
                 };
                 studentsTableModel.addRow(row);
             }
@@ -637,11 +962,19 @@ public class AdminDashboard extends JFrame {
             {
                 addMouseListener(new MouseAdapter() {
                     @Override
-                    public void mouseEntered(MouseEvent e) { hovering = true; repaint(); }
+                    public void mouseEntered(MouseEvent e) {
+                        hovering = true;
+                        repaint();
+                    }
+
                     @Override
-                    public void mouseExited(MouseEvent e) { hovering = false; repaint(); }
+                    public void mouseExited(MouseEvent e) {
+                        hovering = false;
+                        repaint();
+                    }
                 });
             }
+
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
@@ -677,22 +1010,22 @@ public class AdminDashboard extends JFrame {
         panel.add(tablePanel, BorderLayout.CENTER);
         return panel;
     }
-    
+
     private JPanel createTeachersTablePanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(EMSI_LIGHT_GRAY);
         panel.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(EMSI_GREEN, 2),
-            "Liste des Enseignants",
-            0, 0,
-            new Font("Segoe UI", Font.BOLD, 14),
-            EMSI_GREEN
-        ));
-        
+                BorderFactory.createLineBorder(EMSI_GREEN, 2),
+                "Liste des Enseignants",
+                0, 0,
+                new Font("Segoe UI", Font.BOLD, 14),
+                EMSI_GREEN));
+
         // Récupération des enseignants
-        java.util.List<com.emsi.gestionuniv.model.user.Teacher> teachers = new com.emsi.gestionuniv.service.TeacherService().getAllTeachers();
+        java.util.List<com.emsi.gestionuniv.model.user.Teacher> teachers = new com.emsi.gestionuniv.service.TeacherService()
+                .getAllTeachers();
         com.emsi.gestionuniv.service.TeacherService teacherService = new com.emsi.gestionuniv.service.TeacherService();
-        String[] columns = {"Matricule", "Prénom", "Nom", "Email", "Telephone", "Spécialité", "Groupes"};
+        String[] columns = { "Matricule", "Prénom", "Nom", "Email", "Telephone", "Spécialité", "Groupes" };
         Object[][] data = new Object[teachers.size()][columns.length];
         for (int i = 0; i < teachers.size(); i++) {
             var t = teachers.get(i);
@@ -703,13 +1036,17 @@ public class AdminDashboard extends JFrame {
             data[i][4] = t.getTelephone();
             data[i][5] = t.getSpecialite();
             // Récupérer les groupes enseignés
-            java.util.List<com.emsi.gestionuniv.service.TeacherService.Classe> groupes = teacherService.getClassesByTeacherId(t.getId());
-            String groupesStr = groupes.stream().map(com.emsi.gestionuniv.service.TeacherService.Classe::getNom).reduce((a, b) -> a + ", " + b).orElse("");
+            java.util.List<com.emsi.gestionuniv.service.TeacherService.Classe> groupes = teacherService
+                    .getClassesByTeacherId(t.getId());
+            String groupesStr = groupes.stream().map(com.emsi.gestionuniv.service.TeacherService.Classe::getNom)
+                    .reduce((a, b) -> a + ", " + b).orElse("");
             data[i][6] = groupesStr;
         }
         javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(data, columns) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
         JTable table = new JTable(model);
         table.setRowHeight(28);
@@ -720,30 +1057,33 @@ public class AdminDashboard extends JFrame {
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(EMSI_GREEN, 1));
         panel.add(scrollPane, BorderLayout.CENTER);
-        
+
         // Stocker la référence de la table pour pouvoir la rafraîchir
         this.studentsTable = table;
         this.studentsTableModel = model;
-        
+
         return panel;
     }
-    
+
     private void refreshTeachersTable() {
         if (studentsTableModel != null) {
-            java.util.List<com.emsi.gestionuniv.model.user.Teacher> teachers = new com.emsi.gestionuniv.service.TeacherService().getAllTeachers();
+            java.util.List<com.emsi.gestionuniv.model.user.Teacher> teachers = new com.emsi.gestionuniv.service.TeacherService()
+                    .getAllTeachers();
             com.emsi.gestionuniv.service.TeacherService teacherService = new com.emsi.gestionuniv.service.TeacherService();
             studentsTableModel.setRowCount(0);
             for (var t : teachers) {
-                java.util.List<com.emsi.gestionuniv.service.TeacherService.Classe> groupes = teacherService.getClassesByTeacherId(t.getId());
-                String groupesStr = groupes.stream().map(com.emsi.gestionuniv.service.TeacherService.Classe::getNom).reduce((a, b) -> a + ", " + b).orElse("");
+                java.util.List<com.emsi.gestionuniv.service.TeacherService.Classe> groupes = teacherService
+                        .getClassesByTeacherId(t.getId());
+                String groupesStr = groupes.stream().map(com.emsi.gestionuniv.service.TeacherService.Classe::getNom)
+                        .reduce((a, b) -> a + ", " + b).orElse("");
                 Object[] row = {
-                    t.getId(),
-                    t.getPrenom(),
-                    t.getNom(),
-                    t.getEmail(),
-                    t.getTelephone(),
-                    t.getSpecialite(),
-                    groupesStr
+                        t.getId(),
+                        t.getPrenom(),
+                        t.getNom(),
+                        t.getEmail(),
+                        t.getTelephone(),
+                        t.getSpecialite(),
+                        groupesStr
                 };
                 studentsTableModel.addRow(row);
             }
@@ -769,11 +1109,19 @@ public class AdminDashboard extends JFrame {
             {
                 addMouseListener(new MouseAdapter() {
                     @Override
-                    public void mouseEntered(MouseEvent e) { hovering = true; repaint(); }
+                    public void mouseEntered(MouseEvent e) {
+                        hovering = true;
+                        repaint();
+                    }
+
                     @Override
-                    public void mouseExited(MouseEvent e) { hovering = false; repaint(); }
+                    public void mouseExited(MouseEvent e) {
+                        hovering = false;
+                        repaint();
+                    }
                 });
             }
+
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
@@ -809,21 +1157,21 @@ public class AdminDashboard extends JFrame {
         panel.add(tablePanel, BorderLayout.CENTER);
         return panel;
     }
-    
+
     private JPanel createCoursesTablePanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(EMSI_LIGHT_GRAY);
         panel.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(EMSI_GREEN, 2),
-            "Liste des Cours",
-            0, 0,
-            new Font("Segoe UI", Font.BOLD, 14),
-            EMSI_GREEN
-        ));
-        
+                BorderFactory.createLineBorder(EMSI_GREEN, 2),
+                "Liste des Cours",
+                0, 0,
+                new Font("Segoe UI", Font.BOLD, 14),
+                EMSI_GREEN));
+
         // Récupération des cours
-        java.util.List<com.emsi.gestionuniv.model.academic.cours> coursList = new com.emsi.gestionuniv.service.CoursService().getAllCours();
-        String[] columns = {"Code", "Intitulé", "Filière", "Niveau", "Effectif", "Volume horaire"};
+        java.util.List<com.emsi.gestionuniv.model.academic.cours> coursList = new com.emsi.gestionuniv.service.CoursService()
+                .getAllCours();
+        String[] columns = { "Code", "Intitulé", "Filière", "Niveau", "Effectif", "Volume horaire" };
         Object[][] data = new Object[coursList.size()][columns.length];
         for (int i = 0; i < coursList.size(); i++) {
             var c = coursList.get(i);
@@ -837,7 +1185,9 @@ public class AdminDashboard extends JFrame {
         }
         javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(data, columns) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
         JTable table = new JTable(model);
         table.setRowHeight(28);
@@ -848,26 +1198,27 @@ public class AdminDashboard extends JFrame {
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(EMSI_GREEN, 1));
         panel.add(scrollPane, BorderLayout.CENTER);
-        
+
         // Stocker la référence de la table pour pouvoir la rafraîchir
         this.studentsTable = table;
         this.studentsTableModel = model;
-        
+
         return panel;
     }
-    
+
     private void refreshCoursesTable() {
         if (studentsTableModel != null) {
-            java.util.List<com.emsi.gestionuniv.model.academic.cours> coursList = new com.emsi.gestionuniv.service.CoursService().getAllCours();
+            java.util.List<com.emsi.gestionuniv.model.academic.cours> coursList = new com.emsi.gestionuniv.service.CoursService()
+                    .getAllCours();
             studentsTableModel.setRowCount(0);
             for (var c : coursList) {
                 Object[] row = {
-                    c.getCode(),
-                    c.getIntitule(),
-                    c.getFiliere(),
-                    c.getNiveau(),
-                    c.getEffectif(),
-                    c.getVolumeHoraire()
+                        c.getCode(),
+                        c.getIntitule(),
+                        c.getFiliere(),
+                        c.getNiveau(),
+                        c.getEffectif(),
+                        c.getVolumeHoraire()
                 };
                 studentsTableModel.addRow(row);
             }
@@ -876,6 +1227,81 @@ public class AdminDashboard extends JFrame {
 
     private JPanel createSettingsPanel() {
         return createPlaceholderPanel("Paramètres du système");
+    }
+
+    private JPanel createConseilsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel titleLabel = new JLabel("Conseils disciplinaires");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setForeground(new Color(0, 148, 68));
+        titleLabel.setBorder(new EmptyBorder(0, 0, 18, 0));
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        // Récupération des conseils
+        java.util.List<com.emsi.gestionuniv.model.academic.ConseilDisciplinaire> conseils = new com.emsi.gestionuniv.service.ConseilDisciplinaireService()
+                .getAllConseils();
+
+        String[] columns = { "Étudiant", "Cours", "Date", "Justification", "Statut", "Action" };
+        Object[][] data = new Object[conseils.size()][columns.length];
+        com.emsi.gestionuniv.service.EtudiantService etuService = new com.emsi.gestionuniv.service.EtudiantService();
+        com.emsi.gestionuniv.service.CoursService coursService = new com.emsi.gestionuniv.service.CoursService();
+
+        for (int i = 0; i < conseils.size(); i++) {
+            var c = conseils.get(i);
+            String etudiantNom = etuService.getNomById(c.getEtudiantId());
+            String coursNom = coursService.getIntituleById(c.getCoursId());
+            data[i][0] = etudiantNom;
+            data[i][1] = coursNom;
+            data[i][2] = c.getDate().toString();
+            data[i][3] = c.getCommentaire();
+            data[i][4] = c.getType();
+            data[i][5] = "Modifier";
+        }
+
+        JTable table = new JTable(data, columns) {
+            @Override
+            public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                if (!isRowSelected(row)) {
+                    c.setBackground(row % 2 == 0 ? new Color(250, 250, 250) : new Color(236, 253, 245)); // Lignes
+                                                                                                         // zébrées
+                } else {
+                    c.setBackground(new Color(209, 250, 229));
+                }
+                c.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+                if (c instanceof JLabel) {
+                    ((JLabel) c).setBorder(new EmptyBorder(8, 12, 8, 12));
+                }
+                return c;
+            }
+        };
+        table.setRowHeight(36);
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
+        table.getTableHeader().setBackground(new Color(220, 255, 220)); // Vert très clair
+        table.getTableHeader().setForeground(new Color(0, 104, 56)); // Vert foncé EMSI
+        table.getTableHeader().setPreferredSize(new Dimension(100, 36)); // Hauteur de l'en-tête
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setSelectionBackground(new Color(209, 250, 229));
+
+        // --- AJOUT POUR RENDRE LES COLONNES VISIBLES ---
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+        table.setPreferredScrollableViewportSize(new Dimension(600, table.getRowHeight() * 6));
+        table.getColumnModel().getColumn(0).setPreferredWidth(180); // Étudiant
+        table.getColumnModel().getColumn(1).setPreferredWidth(320); // Cours
+        table.getColumnModel().getColumn(2).setPreferredWidth(140); // Date
+        table.getColumnModel().getColumn(3).setPreferredWidth(200); // Justification
+        table.getColumnModel().getColumn(4).setPreferredWidth(100); // Statut
+        table.getColumnModel().getColumn(5).setPreferredWidth(100); // Action
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(0, 148, 68), 1));
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
     }
 
     // Placeholder moderne pour les autres panels
@@ -890,7 +1316,7 @@ public class AdminDashboard extends JFrame {
     }
 
     // Pour tester cette classe individuellement
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new AdminDashboard("admin"));
-    }
+    // public static void main(String[] args) {
+    //     SwingUtilities.invokeLater(() -> new AdminDashboard("admin"));
+    // }
 }

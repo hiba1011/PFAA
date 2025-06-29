@@ -2,8 +2,12 @@ package com.emsi.gestionuniv.service;
 
 import com.emsi.gestionuniv.config.DBConnect;
 import com.emsi.gestionuniv.model.academic.Abscence;
+import com.emsi.gestionuniv.model.academic.ConseilDisciplinaire;
 import com.emsi.gestionuniv.model.user.Student;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -41,7 +45,7 @@ public class AbscenceService {
                 Abscence.setCoursId(rs.getInt("cours_id"));
                 Abscence.setDate(rs.getDate("date"));
                 Abscence.setJustifiee(rs.getBoolean("justifiee"));
-                Abscence.setJustification(rs.getString("justification"));
+                Abscence.setJustification(rs.getBytes("justification"));
 
                 Student student = new Student();
                 student.setMatricule(rs.getString("matricule"));
@@ -82,8 +86,7 @@ public class AbscenceService {
             pstmt.setInt(2, absence.getCoursId());
             pstmt.setDate(3, absence.getDate());
             pstmt.setBoolean(4, absence.isJustifiee());
-            pstmt.setString(5, absence.getJustification());
-
+            pstmt.setBytes(5, absence.getJustification());
             success = pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -105,7 +108,7 @@ public class AbscenceService {
 
             pstmt = conn.prepareStatement(sql);
             pstmt.setBoolean(1, absence.isJustifiee());
-            pstmt.setString(2, absence.getJustification());
+            pstmt.setBytes(5, absence.getJustification());
             pstmt.setInt(3, absence.getId());
 
             success = pstmt.executeUpdate() > 0;
@@ -149,9 +152,12 @@ public class AbscenceService {
 
     private void closeResources(ResultSet rs, PreparedStatement pstmt, Connection conn) {
         try {
-            if (rs != null) rs.close();
-            if (pstmt != null) pstmt.close();
-            if (conn != null) conn.close();
+            if (rs != null)
+                rs.close();
+            if (pstmt != null)
+                pstmt.close();
+            if (conn != null)
+                conn.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -181,7 +187,7 @@ public class AbscenceService {
                 absence.setCoursId(rs.getInt("cours_id"));
                 absence.setDate(rs.getDate("date"));
                 absence.setJustifiee(rs.getBoolean("justifiee"));
-                absence.setJustification(rs.getString("justification"));
+                absence.setJustification(rs.getBytes("justification"));
 
                 Student student = new Student();
                 student.setMatricule(rs.getString("matricule"));
@@ -218,7 +224,7 @@ public class AbscenceService {
                 absence.setCoursId(rs.getInt("cours_id"));
                 absence.setDate(rs.getDate("date"));
                 absence.setJustifiee(rs.getBoolean("justifiee"));
-                absence.setJustification(rs.getString("justification"));
+                absence.setJustification(rs.getBytes("justification"));
                 absences.add(absence);
             }
         } catch (SQLException e) {
@@ -236,11 +242,11 @@ public class AbscenceService {
         ResultSet rs = null;
         try {
             conn = DBConnect.getConnection();
-            // Vérifier s'il existe déjà une absence pour cet étudiant, ce cours et cette date
+            // Vérifier s'il existe déjà une absence pour cet étudiant, ce cours et cette
+            // date
             String checkSql = String.format(
-                "SELECT COUNT(*) FROM %s.%s WHERE etudiant_id = ? AND cours_id = ? AND date = ?",
-                DATABASE_SCHEMA, ABSCENCES_TABLE
-            );
+                    "SELECT COUNT(*) FROM %s.%s WHERE etudiant_id = ? AND cours_id = ? AND date = ?",
+                    DATABASE_SCHEMA, ABSCENCES_TABLE);
             checkStmt = conn.prepareStatement(checkSql);
             checkStmt.setInt(1, absence.getEtudiantId());
             checkStmt.setInt(2, absence.getCoursId());
@@ -254,21 +260,115 @@ public class AbscenceService {
 
             // Ajout de l'absence
             String insertSql = String.format(
-                "INSERT INTO %s.%s (etudiant_id, cours_id, date, justifiee, justification) VALUES (?, ?, ?, ?, ?)",
-                DATABASE_SCHEMA, ABSCENCES_TABLE
-            );
+                    "INSERT INTO %s.%s (etudiant_id, cours_id, date, justifiee, justification) VALUES (?, ?, ?, ?, ?)",
+                    DATABASE_SCHEMA, ABSCENCES_TABLE);
             insertStmt = conn.prepareStatement(insertSql);
             insertStmt.setInt(1, absence.getEtudiantId());
             insertStmt.setInt(2, absence.getCoursId());
             insertStmt.setDate(3, absence.getDate());
             insertStmt.setBoolean(4, absence.isJustifiee());
-            insertStmt.setString(5, absence.getJustification());
+            insertStmt.setBytes(5, absence.getJustification());
             insertStmt.executeUpdate();
+
+            int absCount = getAbsenceCountForEtudiantCours(absence.getEtudiantId(), absence.getCoursId());
+            ConseilDisciplinaireService conseilService = new ConseilDisciplinaireService();
+            if (absCount == 5) {
+                ConseilDisciplinaire c = new ConseilDisciplinaire();
+                c.setEtudiantId(absence.getEtudiantId());
+                c.setCoursId(absence.getCoursId());
+                c.setType("Blâme");
+                c.setDate(java.time.LocalDateTime.now());
+                c.setCommentaire("5 absences non justifiées dans ce cours.");
+                conseilService.ajouterConseil(c);
+            } else if (absCount == 10) {
+                ConseilDisciplinaire c = new ConseilDisciplinaire();
+                c.setEtudiantId(absence.getEtudiantId());
+                c.setCoursId(absence.getCoursId());
+                c.setType("Conseil disciplinaire");
+                c.setDate(java.time.LocalDateTime.now());
+                c.setCommentaire("10 absences non justifiées dans ce cours.");
+                conseilService.ajouterConseil(c);
+            } else if (absCount > 10 && absCount % 1 == 0) { // chaque absence au-delà de 10
+                ConseilDisciplinaire c = new ConseilDisciplinaire();
+                c.setEtudiantId(absence.getEtudiantId());
+                c.setCoursId(absence.getCoursId());
+                c.setType("Exclusion 7 jours");
+                c.setDate(java.time.LocalDateTime.now());
+                c.setCommentaire("Plus de 10 absences non justifiées dans ce cours. Exclusion temporaire.");
+                conseilService.ajouterConseil(c);
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
             closeResources(rs, checkStmt, null);
             closeResources(null, insertStmt, conn);
         }
+    }
+
+    public int getAbsenceCountForEtudiantCours(int etudiantId, int coursId) {
+        int count = 0;
+        try (Connection conn = DBConnect.getConnection()) {
+            String sql = String.format(
+                    "SELECT COUNT(*) FROM %s.%s WHERE etudiant_id = ? AND cours_id = ? AND justifiee = 0",
+                    DATABASE_SCHEMA, ABSCENCES_TABLE);
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, etudiantId);
+            ps.setInt(2, coursId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next())
+                count = rs.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    public void updateJustificatif(int abscenceId, File justificatifImage) {
+        try (Connection conn = DBConnect.getConnection()) {
+            String sql = "UPDATE abscences SET justification = ?, justifiee = false WHERE id = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            FileInputStream fis = new FileInputStream(justificatifImage);
+            ps.setBinaryStream(1, fis, (int) justificatifImage.length());
+            ps.setInt(2, abscenceId);
+            ps.executeUpdate();
+            fis.close();
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void validerJustificatif(int abscenceId, boolean approuve) {
+        try (Connection conn = DBConnect.getConnection()) {
+            String sql = "UPDATE abscences SET justifiee = ? WHERE id = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setBoolean(1, approuve);
+            ps.setInt(2, abscenceId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<Abscence> getAbsencesByClasse(String classe) {
+        List<Abscence> absences = new ArrayList<>();
+        try (Connection conn = DBConnect.getConnection()) {
+            String sql = "SELECT a.* FROM abscences a JOIN etudiants e ON a.etudiant_id = e.id WHERE e.groupe = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, classe);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Abscence a = new Abscence();
+                a.setId(rs.getInt("id"));
+                a.setEtudiantId(rs.getInt("etudiant_id"));
+                a.setCoursId(rs.getInt("cours_id"));
+                a.setDate(rs.getDate("date"));
+                a.setJustifiee(rs.getBoolean("justifiee"));
+                a.setJustification(rs.getBytes("justification"));
+                absences.add(a);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return absences;
     }
 }
