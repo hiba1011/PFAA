@@ -408,7 +408,6 @@ private JPanel createSidebarPanel() {
         sidebarPanel.add(Box.createRigidArea(new Dimension(0, 12)));
     }
 
-    sidebarPanel.add(Box.createVerticalGlue());
     JButton emploiBtn = createMenuButton("Emploi du temps PDF", "emploi_du_temps_pdf", false);
     menuButtons.add(emploiBtn);
     sidebarPanel.add(emploiBtn);

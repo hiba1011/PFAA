@@ -325,7 +325,8 @@ public class AbscenceService {
 
     public void updateJustificatif(int abscenceId, File justificatifImage) {
         try (Connection conn = DBConnect.getConnection()) {
-            String sql = "UPDATE abscences SET justification = ?, justifiee = false WHERE id = ?";
+            String sql = String.format("UPDATE %s.%s SET justification = ?, justifiee = false WHERE id = ?", 
+                DATABASE_SCHEMA, ABSCENCES_TABLE);
             PreparedStatement ps = conn.prepareStatement(sql);
             FileInputStream fis = new FileInputStream(justificatifImage);
             ps.setBinaryStream(1, fis, (int) justificatifImage.length());
@@ -339,7 +340,8 @@ public class AbscenceService {
 
     public void validerJustificatif(int abscenceId, boolean approuve) {
         try (Connection conn = DBConnect.getConnection()) {
-            String sql = "UPDATE abscences SET justifiee = ? WHERE id = ?";
+            String sql = String.format("UPDATE %s.%s SET justifiee = ? WHERE id = ?", 
+                DATABASE_SCHEMA, ABSCENCES_TABLE);
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setBoolean(1, approuve);
             ps.setInt(2, abscenceId);
@@ -352,7 +354,8 @@ public class AbscenceService {
     public List<Abscence> getAbsencesByClasse(String classe) {
         List<Abscence> absences = new ArrayList<>();
         try (Connection conn = DBConnect.getConnection()) {
-            String sql = "SELECT a.* FROM abscences a JOIN etudiants e ON a.etudiant_id = e.id WHERE e.groupe = ?";
+            String sql = String.format("SELECT a.* FROM %s.%s a JOIN etudiants e ON a.etudiant_id = e.id WHERE e.groupe = ?", 
+                DATABASE_SCHEMA, ABSCENCES_TABLE);
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, classe);
             ResultSet rs = ps.executeQuery();
