@@ -121,10 +121,11 @@ public class EtudiantDashboard {
         backArrow.setContentAreaFilled(false);
         backArrow.setCursor(new Cursor(Cursor.HAND_CURSOR));
         backArrow.setToolTipText("Retour à la page de connexion étudiant");
-        backArrow.addActionListener(e -> {
-            frame.dispose();
-            new com.emsi.gestionuniv.view.Login.LoginEtudiant();
-        });
+backArrow.addActionListener(e -> {
+    if (tabbedPane != null) {
+        tabbedPane.setSelectedIndex(0); // Va à l'onglet 0 (tableau de bord)
+    }
+});
         backArrow.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
