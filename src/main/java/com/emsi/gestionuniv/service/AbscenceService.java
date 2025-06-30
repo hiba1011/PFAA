@@ -371,29 +371,4 @@ public class AbscenceService {
         }
         return absences;
     }
-
-    public void updateJustificationTexte(int abscenceId, String justificationTexte) {
-        try (Connection conn = DBConnect.getConnection()) {
-            String sql = "UPDATE abscences SET justification_texte = ?, justifiee = ? WHERE id = ?";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, justificationTexte);
-            ps.setBoolean(2, justificationTexte != null && !justificationTexte.isEmpty());
-            ps.setInt(3, abscenceId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void updateAction(int abscenceId, String action) {
-        try (Connection conn = DBConnect.getConnection()) {
-            String sql = "UPDATE abscences SET action = ? WHERE id = ?";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, action);
-            ps.setInt(2, abscenceId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 }

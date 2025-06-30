@@ -120,10 +120,10 @@ public class EtudiantDashboard {
         backArrow.setBorderPainted(false);
         backArrow.setContentAreaFilled(false);
         backArrow.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        backArrow.setToolTipText("Retour à la page de connexion étudiant");
+        backArrow.setToolTipText("Retour à la page précédente");
 backArrow.addActionListener(e -> {
     if (tabbedPane != null) {
-        tabbedPane.setSelectedIndex(0); // Va à l'onglet 0 (tableau de bord)
+        tabbedPane.setSelectedIndex(0); // Retourne au dashboard principal
     }
 });
         backArrow.addMouseListener(new MouseAdapter() {

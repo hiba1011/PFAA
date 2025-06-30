@@ -411,11 +411,9 @@ public class EnseignantDashboard extends JFrame {
         backButton.setContentAreaFilled(false);
         backButton.setFocusPainted(false);
         backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        backButton.addActionListener(e -> {
-            dispose(); // Fermer le tableau de bord actuel
-            SwingUtilities.invokeLater(() -> new EnseignantLogin().setVisible(true)); // Ouvrir l'écran de connexion
-                                                                                      // enseignant
-        });
+backButton.addActionListener(e -> {
+    showDashboardOverviewPanel(); // Affiche le tableau de bord principal
+});
 
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setOpaque(false);
@@ -928,15 +926,14 @@ private JPanel createPlanningTab() {
     panel.setBackground(Color.WHITE);
     panel.setBorder(new javax.swing.border.EmptyBorder(40, 80, 40, 80));
 
-    // Section Emploi du temps
-    JLabel titreEmploi = new JLabel("Mon emploi du temps");
-    titreEmploi.setFont(new Font("Segoe UI", Font.BOLD, 22));
-    titreEmploi.setForeground(new Color(0, 148, 68));
-    titreEmploi.setAlignmentX(Component.CENTER_ALIGNMENT);
-    panel.add(titreEmploi);
+    JLabel titre = new JLabel("Mon emploi du temps");
+    titre.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    titre.setForeground(new Color(0, 148, 68));
+    titre.setAlignmentX(Component.CENTER_ALIGNMENT);
+    panel.add(titre);
     panel.add(Box.createVerticalStrut(24));
 
-    int enseignantId = currentTeacher.getId();
+    int enseignantId = currentTeacher.getId(); // ou la variable qui contient l'id de l'enseignant connecté
     java.util.List<com.emsi.gestionuniv.model.planning.EmploiDuTempsPdf> emplois =
         new com.emsi.gestionuniv.service.EmploiDuTempsPdfService().getEmploisEnseignantById(enseignantId);
 
@@ -1003,90 +1000,6 @@ private JPanel createPlanningTab() {
         scroll.setBackground(Color.WHITE);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         panel.add(scroll);
-    }
-
-    // Séparateur
-    panel.add(Box.createVerticalStrut(40));
-    JSeparator separator = new JSeparator();
-    separator.setForeground(new Color(230, 240, 230));
-    separator.setMaximumSize(new Dimension(Integer.MAX_VALUE, 2));
-    panel.add(separator);
-    panel.add(Box.createVerticalStrut(40));
-
-    // Section Planning d'examens
-    JLabel titrePlanning = new JLabel("Planning des examens");
-    titrePlanning.setFont(new Font("Segoe UI", Font.BOLD, 22));
-    titrePlanning.setForeground(new Color(0, 148, 68));
-    titrePlanning.setAlignmentX(Component.CENTER_ALIGNMENT);
-    panel.add(titrePlanning);
-    panel.add(Box.createVerticalStrut(24));
-
-    java.util.List<com.emsi.gestionuniv.model.academic.PlanningExamen> plannings =
-        new com.emsi.gestionuniv.service.PlanningExamenService().getPlanningsByEnseignant(enseignantId);
-
-    if (plannings.isEmpty()) {
-        JLabel emptyPlanningLabel = new JLabel("Aucun planning d'examen disponible pour vous.");
-        emptyPlanningLabel.setFont(new Font("Segoe UI", Font.ITALIC, 16));
-        emptyPlanningLabel.setForeground(new Color(88, 88, 90));
-        emptyPlanningLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(emptyPlanningLabel);
-    } else {
-        JPanel planningListPanel = new JPanel();
-        planningListPanel.setLayout(new BoxLayout(planningListPanel, BoxLayout.Y_AXIS));
-        planningListPanel.setOpaque(false);
-
-        for (com.emsi.gestionuniv.model.academic.PlanningExamen planning : plannings) {
-            JPanel row = new JPanel(new BorderLayout());
-            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
-            row.setBackground(Color.WHITE);
-            row.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(230, 240, 230)),
-                new javax.swing.border.EmptyBorder(8, 12, 8, 12)
-            ));
-
-            JLabel icon = new JLabel("\uD83D\uDCC4");
-            icon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 28));
-            icon.setForeground(new Color(0, 148, 68));
-            icon.setBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 12));
-            row.add(icon, BorderLayout.WEST);
-
-            JPanel infoPanel = new JPanel();
-            infoPanel.setOpaque(false);
-            infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
-            JLabel titreLbl = new JLabel(planning.getTitre());
-            titreLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
-            titreLbl.setForeground(new Color(0, 104, 56));
-            JLabel classeLbl = new JLabel("Classe : " + planning.getClasse());
-            classeLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            classeLbl.setForeground(new Color(88, 88, 90));
-            infoPanel.add(titreLbl);
-            infoPanel.add(classeLbl);
-            row.add(infoPanel, BorderLayout.CENTER);
-
-            JButton openBtn = new JButton("Télécharger / Ouvrir");
-            openBtn.setBackground(new Color(0, 148, 68));
-            openBtn.setForeground(Color.WHITE);
-            openBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            openBtn.addActionListener(ev -> {
-                try {
-                    java.awt.Desktop.getDesktop().open(new java.io.File(planning.getCheminPdf()));
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(panel, "Impossible d'ouvrir le PDF.");
-                }
-            });
-
-            JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-            btnPanel.setOpaque(false);
-            btnPanel.add(openBtn);
-            row.add(btnPanel, BorderLayout.EAST);
-
-            planningListPanel.add(row);
-        }
-        JScrollPane planningScroll = new JScrollPane(planningListPanel);
-        planningScroll.setBorder(BorderFactory.createEmptyBorder());
-        planningScroll.setBackground(Color.WHITE);
-        planningScroll.getVerticalScrollBar().setUnitIncrement(16);
-        panel.add(planningScroll);
     }
 
     panel.add(Box.createVerticalGlue());
@@ -1350,11 +1263,6 @@ Runnable updateMessages = () -> {
 
         // Header avec gradient et design moderne
         JPanel header = createModernHeader();
-        header.setLayout(new BorderLayout());
-        JLabel dateLabel = new JLabel("Date : " + java.time.LocalDate.now().toString());
-        dateLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        dateLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        header.add(dateLabel, BorderLayout.EAST);
         panel.add(header, BorderLayout.NORTH);
 
         // Main content panel
@@ -1372,6 +1280,10 @@ Runnable updateMessages = () -> {
 
         panel.add(mainContent, BorderLayout.CENTER);
 
+        // Ajoute en haut de ton panel d'absences enseignant :
+JLabel dateLabel = new JLabel("Date : " + java.time.LocalDate.now().toString());
+dateLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+panel.add(dateLabel, BorderLayout.NORTH);
         return panel;
     }
     public void ajouterAbsence(Abscence absence) {
@@ -1476,20 +1388,6 @@ Runnable updateMessages = () -> {
                     (c.getIntitule() != null && !c.getIntitule().isEmpty() ? c.getIntitule() : c.getTitre()));
         }
 
-        // Sélectionner le cours courant si défini
-        if (currentCoursId > 0) {
-            for (int i = 0; i < coursList.size(); i++) {
-                if (coursList.get(i).getId() == currentCoursId) {
-                    courseSelector.setSelectedIndex(i);
-                    break;
-                }
-            }
-        } else if (!coursList.isEmpty()) {
-            // Si aucun cours sélectionné, prendre le premier par défaut
-            currentCoursId = coursList.get(0).getId();
-            courseSelector.setSelectedIndex(0);
-        }
-
         // Listener pour mettre à jour currentCoursId et rafraîchir le panneau
         courseSelector.addActionListener(e -> {
             int selectedIndex = courseSelector.getSelectedIndex();
@@ -1519,15 +1417,20 @@ Runnable updateMessages = () -> {
     }
 
     private JPanel createQuickStatsPanel() {
-        JPanel statsPanel = new JPanel(new GridLayout(1, 1, 15, 0));
+        JPanel statsPanel = new JPanel(new GridLayout(1, 3, 15, 0));
         statsPanel.setBackground(Color.WHITE);
 
         AbscenceService absenceService = new AbscenceService();
         int[] stats = absenceService.getAbsenceStats(currentCoursId);
 
-        // Only show the total card
+        // Carte de statistique moderne
         JPanel totalCard = createStatCard("Total", String.valueOf(stats[0]), new Color(52, 152, 219), "");
+        JPanel justifiedCard = createStatCard("Justifiées", String.valueOf(stats[1]), new Color(46, 204, 113), "");
+        JPanel unjustifiedCard = createStatCard("Non justifiées", String.valueOf(stats[2]), new Color(231, 76, 60), "");
+
         statsPanel.add(totalCard);
+        statsPanel.add(justifiedCard);
+        statsPanel.add(unjustifiedCard);
 
         return statsPanel;
     }
@@ -1597,7 +1500,7 @@ private JPanel createModernTableSection() {
     tableTitle.setBorder(BorderFactory.createEmptyBorder(24, 32, 12, 32));
 
     // Table moderne
-    String[] columns = {"Matricule", "Nom", "Prénom", "Absent ?"};
+    String[] columns = {"Matricule", "Nom", "Prénom", "Absent ?", "Justifiée", "Justificatif"};
     DefaultTableModel model = new DefaultTableModel(columns, 0) {
         @Override
         public boolean isCellEditable(int row, int column) {
@@ -1614,11 +1517,14 @@ private JPanel createModernTableSection() {
     AbscenceService absenceService = new AbscenceService();
     List<Abscence> absences = absenceService.getAbsencesByCours(currentCoursId);
     for (Abscence absence : absences) {
+        Object justificatifCell = (absence.getJustification() != null && absence.getJustification().length > 0) ? "Voir" : "";
         model.addRow(new Object[]{
             absence.getEtudiant().getMatricule(),
             absence.getEtudiant().getNom(),
             absence.getEtudiant().getPrenom(),
-            true
+            true,
+            absence.isJustifiee() ? "Oui" : "Non",
+            justificatifCell
         });
     }
 
@@ -2035,237 +1941,189 @@ addButton.addActionListener(e -> {
      * 
      * @return Le panel de contenu configuré
      */
-    private JPanel createContentPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(EMSI_LIGHT_GRAY);
-        panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
-
-        // Titre du contenu modernisé
-        JLabel contentTitle = new JLabel("Tableau de bord");
-        contentTitle.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        contentTitle.setForeground(EMSI_GREEN);
-
-        // Zone de recherche moderne
-        final JTextField searchField = new JTextField(20) {
-            {
-                setOpaque(false);
-                setBorder(new CompoundBorder(
-                        BorderFactory.createLineBorder(new Color(200, 200, 200)),
-                        BorderFactory.createEmptyBorder(8, 14, 8, 14)));
-            }
-
-            @Override
-            protected void paintComponent(Graphics g) {
-                if (!isOpaque()) {
-                    Graphics2D g2d = (Graphics2D) g.create();
-                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2d.setColor(Color.WHITE);
-                    g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-                    g2d.dispose();
-                }
-                super.paintComponent(g);
-            }
-        };
-        searchField.setText("Rechercher...");
-        searchField.setForeground(Color.GRAY);
-        searchField.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (searchField.getText().equals("Rechercher...")) {
-                    searchField.setText("");
-                    searchField.setForeground(Color.BLACK);
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (searchField.getText().isEmpty()) {
-                    searchField.setText("Rechercher...");
-                    searchField.setForeground(Color.GRAY);
-                }
-            }
-        });
-
-        // Panel pour le titre et la recherche
-        JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.setOpaque(false);
-        titlePanel.add(contentTitle, BorderLayout.WEST);
-        // SUPPRIME : titlePanel.add(searchField, BorderLayout.EAST);
-        titlePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 30, 0));
-
-        // --- Compteurs dynamiques ---
-        int nbCours = 0;
-        int nbEtudiants = 0;
-        int nbNotesEnAttente = 0;
-        int nbMessages = 0;
-        try {
-            nbCours = coursService.getCoursByEnseignant(teacher.getId()).size();
-            nbEtudiants = new com.emsi.gestionuniv.service.EtudiantService().getStudentsByTeacherId(teacher.getId()).size();
-            java.util.List<com.emsi.gestionuniv.model.academic.cours> coursList = coursService.getCoursByEnseignant(teacher.getId());
-            com.emsi.gestionuniv.service.NoteService noteService = new com.emsi.gestionuniv.service.NoteService();
-            for (com.emsi.gestionuniv.model.academic.cours c : coursList) {
-                List<Student> students = new com.emsi.gestionuniv.service.EtudiantService().getStudentsByCoursId(c.getId());
-                List<com.emsi.gestionuniv.model.academic.Note> notes = noteService.getNotesByCoursId(c.getId());
-                for (Student s : students) {
-                    boolean hasValidNote = false;
-                    for (com.emsi.gestionuniv.model.academic.Note n : notes) {
-                        if (n.getEtudiantId() == s.getId() && n.getValidation() != null && !n.getValidation().trim().isEmpty() && !"En attente".equalsIgnoreCase(n.getValidation())) {
-                            hasValidNote = true;
-                            break;
-                        }
-                    }
-                    if (!hasValidNote) nbNotesEnAttente++;
-                }
-            }
-            nbMessages = new com.emsi.gestionuniv.service.MessageService().countMessagesForTeacher(teacher.getId());
-        } catch (Exception ex) {
-            ex.printStackTrace();
+   private JPanel createContentPanel() {
+    // Panel principal avec fond dégradé moderne
+    JPanel panel = new JPanel(new BorderLayout()) {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            GradientPaint gp = new GradientPaint(0, 0, new Color(225, 245, 225), getWidth(), getHeight(), Color.WHITE);
+            g2d.setPaint(gp);
+            g2d.fillRect(0, 0, getWidth(), getHeight());
+            g2d.dispose();
         }
-        // --- Fin compteurs dynamiques ---
+    };
+    panel.setBorder(BorderFactory.createEmptyBorder(50, 120, 50, 120)); // Plus d'espace
 
-        // Panneaux de statistiques (cartes modernes)
-        JPanel statsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 10));
-        statsPanel.setOpaque(false);
-        statsPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 40, 0));
+    // Titre du contenu modernisé, centré et plus grand
+    JLabel contentTitle = new JLabel("Tableau de bord");
+    contentTitle.setFont(new Font("Segoe UI", Font.BOLD, 40));
+    contentTitle.setForeground(EMSI_GREEN);
+    contentTitle.setHorizontalAlignment(SwingConstants.CENTER);
 
-        statsPanel.add(createModernStatPanel("Cours", String.valueOf(nbCours), "\uD83D\uDCDA")); // 📚
-        statsPanel.add(Box.createHorizontalStrut(30));
-        statsPanel.add(createModernStatPanel("Étudiants", String.valueOf(nbEtudiants), "\uD83D\uDC64")); // 👤
-        statsPanel.add(Box.createHorizontalStrut(30));
-        statsPanel.add(createModernStatPanel("Notes en attente", String.valueOf(nbNotesEnAttente), "\uD83D\uDCCB")); // 📋
-        statsPanel.add(Box.createHorizontalStrut(30));
-        statsPanel.add(createModernStatPanel("Messages", "", "\uD83D\uDCE8")); // 📨
+    // Panel pour le titre (sans barre de recherche)
+    JPanel titlePanel = new JPanel(new BorderLayout());
+    titlePanel.setOpaque(false);
+    titlePanel.add(contentTitle, BorderLayout.CENTER);
+    titlePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 50, 0));
 
-        // SUPPRIME : Panneau des dernières activités et calendrier
-        // JPanel activitiesPanel = createActivitiesPanel();
-        // JPanel calendarPanel = createCalendarPanel();
-        // JPanel dashboardContent = new JPanel(new GridLayout(1, 2, 30, 0));
-        // dashboardContent.setOpaque(false);
-        // dashboardContent.add(activitiesPanel);
-        // dashboardContent.add(calendarPanel);
-
-        panel.add(titlePanel, BorderLayout.NORTH);
-        panel.add(statsPanel, BorderLayout.CENTER);
-        // SUPPRIME : panel.add(dashboardContent, BorderLayout.SOUTH);
-        return panel;
+    // --- Compteurs dynamiques ---
+    int nbCours = 0;
+    int nbEtudiants = 0;
+    int nbNotesEnAttente = 0;
+    int nbMessages = 0;
+    try {
+        nbCours = coursService.getCoursByEnseignant(teacher.getId()).size();
+        nbEtudiants = new com.emsi.gestionuniv.service.EtudiantService().getStudentsByTeacherId(teacher.getId()).size();
+        java.util.List<com.emsi.gestionuniv.model.academic.cours> coursList = coursService.getCoursByEnseignant(teacher.getId());
+        com.emsi.gestionuniv.service.NoteService noteService = new com.emsi.gestionuniv.service.NoteService();
+        for (com.emsi.gestionuniv.model.academic.cours c : coursList) {
+            java.util.List<com.emsi.gestionuniv.model.academic.Note> notes = noteService.getNotesByCoursId(c.getId());
+            for (com.emsi.gestionuniv.model.academic.Note n : notes) {
+                if (n.getValidation() == null || n.getValidation().trim().isEmpty()) {
+                    nbNotesEnAttente++;
+                }
+            }
+        }
+        nbMessages = new com.emsi.gestionuniv.service.MessageService().countMessagesForTeacher(teacher.getId());
+    } catch (Exception ex) {
+        ex.printStackTrace();
     }
+    // --- Fin compteurs dynamiques ---
 
+    // Panneaux de statistiques (cartes modernes) avec style amélioré
+    JPanel statsPanel = new JPanel();
+    statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.X_AXIS));
+    statsPanel.setOpaque(false);
+    statsPanel.setBorder(BorderFactory.createEmptyBorder(30, 0, 30, 0));
+
+    statsPanel.add(createModernStatPanel("Cours", String.valueOf(nbCours), "\uD83D\uDCDA"));
+    statsPanel.add(Box.createHorizontalStrut(40));
+    statsPanel.add(createModernStatPanel("Étudiants", String.valueOf(nbEtudiants), "\uD83D\uDC64"));
+    statsPanel.add(Box.createHorizontalStrut(40));
+    statsPanel.add(createModernStatPanel("Notes en attente", "", "\uD83D\uDCCB"));
+    statsPanel.add(Box.createHorizontalStrut(40));
+    statsPanel.add(createModernStatPanel("Messages", "", "\uD83D\uDCE8"));
+
+    // Ajoute le statsPanel dans un JScrollPane horizontal
+    JScrollPane statsScroll = new JScrollPane(statsPanel,
+        JScrollPane.VERTICAL_SCROLLBAR_NEVER,
+        JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    statsScroll.setBorder(BorderFactory.createEmptyBorder());
+    statsScroll.setOpaque(false);
+    statsScroll.getViewport().setOpaque(false);
+
+    // Panel d'accueil plus aéré (optionnel)
+    JPanel dashboardContent = new JPanel();
+    dashboardContent.setOpaque(false);
+    dashboardContent.setPreferredSize(new Dimension(0, 60));
+
+    panel.add(titlePanel, BorderLayout.NORTH);
+    panel.add(statsScroll, BorderLayout.CENTER); // <-- Remplace statsPanel par statsScroll
+    panel.add(dashboardContent, BorderLayout.SOUTH);
+    return panel;
+}
     private JPanel createModernStatPanel(String title, String value, String icon) {
-        final boolean[] hovering = { false };
+    final boolean[] hovering = { false };
 
-        JPanel panel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    JPanel panel = new JPanel() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Fond blanc arrondi
-                g2d.setColor(Color.WHITE);
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 24, 24);
-
-                // Ombre portée
-                if (hovering[0]) {
-                    g2d.setColor(new Color(0, 0, 0, 40));
-                    g2d.fillRoundRect(6, 6, getWidth() - 12, getHeight() - 12, 24, 24);
-                } else {
-                    g2d.setColor(new Color(0, 0, 0, 18));
-                    g2d.fillRoundRect(8, 8, getWidth() - 16, getHeight() - 16, 24, 24);
-                }
-
-                g2d.dispose();
-            }
-        };
-
-        panel.setPreferredSize(new Dimension(200, 160));
-        panel.setMaximumSize(new Dimension(220, 180));
-        panel.setOpaque(false);
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
-
-        // Hover effect
-        panel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                panel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                hovering[0] = true;
-                panel.repaint();
+            // Ombre portée douce
+            if (hovering[0]) {
+                g2d.setColor(new Color(0, 148, 68, 40));
+                g2d.fillRoundRect(4, 8, getWidth() - 8, getHeight() - 8, 36, 36);
+            } else {
+                g2d.setColor(new Color(0, 0, 0, 16));
+                g2d.fillRoundRect(8, 12, getWidth() - 16, getHeight() - 16, 36, 36);
             }
 
-            @Override
-            public void mouseExited(MouseEvent e) {
-                panel.setCursor(Cursor.getDefaultCursor());
-                hovering[0] = false;
-                panel.repaint();
+            // Fond blanc arrondi
+            g2d.setColor(Color.WHITE);
+            g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 36, 36);
+
+            g2d.dispose();
+        }
+    };
+
+    panel.setPreferredSize(new Dimension(210, 170));
+    panel.setMaximumSize(new Dimension(210, 170));
+    panel.setMinimumSize(new Dimension(210, 170));
+    panel.setOpaque(false);
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setBorder(BorderFactory.createEmptyBorder(20, 18, 20, 18));
+
+    // Hover effect
+    panel.addMouseListener(new MouseAdapter() {
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            panel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            hovering[0] = true;
+            panel.repaint();
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            panel.setCursor(Cursor.getDefaultCursor());
+            hovering[0] = false;
+            panel.repaint();
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if (title.equals("Cours")) {
+                showCoursPdfListPanel();
+            } else if (title.equals("Étudiants")) {
+                showClassesPanel();
+            } else if (title.equals("Notes en attente")) {
+                new SaisieNotesDialog(EnseignantDashboard.this, currentTeacherId).setVisible(true);
+            } else if (title.equals("Messages")) {
+                showMessagesPanel();
             }
+        }
+    });
 
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (title.equals("Cours")) {
-                     showCoursPdfListPanel();
-                } else if (title.equals("Étudiants")) {
-                    showClassesPanel();
-                } else if (title.equals("Notes en attente")) {
-                    new SaisieNotesDialog(EnseignantDashboard.this, currentTeacherId).setVisible(true);
-                } else if (title.equals("Messages")) {
-                    showMessagesPanel();
-                }
-            }
-        });
+    // Icône
+    JLabel iconLabel = new JLabel(icon);
+    iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 44));
+    iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
-        // Icône
-        JLabel iconLabel = new JLabel(icon);
-        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 38));
-        iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+    // Titre
+    JLabel titre = new JLabel(title);
+    titre.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    titre.setForeground(EMSI_GREEN);
+    titre.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Titre
-        JLabel titre = new JLabel(title);
-        titre.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        titre.setForeground(EMSI_GREEN); // assure-toi que EMSI_GREEN est défini
-        titre.setAlignmentX(Component.CENTER_ALIGNMENT);
+    // Valeur (statistique)
+    JLabel valeur = new JLabel(value);
+    valeur.setFont(new Font("Segoe UI", Font.BOLD, 38));
+    valeur.setForeground(new Color(44, 62, 80));
+    valeur.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Valeur
-        JLabel valeur = new JLabel(value);
-        valeur.setFont(new Font("Segoe UI", Font.BOLD, 36));
-        valeur.setForeground(new Color(44, 62, 80));
-        valeur.setAlignmentX(Component.CENTER_ALIGNMENT);
+    // Ajout à la carte
+    panel.add(Box.createVerticalStrut(8));
+    panel.add(iconLabel);
+    panel.add(Box.createVerticalStrut(6));
+    panel.add(titre);
+    panel.add(Box.createVerticalStrut(10));
+    panel.add(valeur);
+    panel.add(Box.createVerticalGlue());
 
-        // Ajout à la carte
-        panel.add(iconLabel);
-        panel.add(titre);
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(valeur);
-        panel.add(Box.createVerticalGlue());
-
-        return panel;
-    }
+    return panel;
+}
 
     /**
      * Crée le panneau des dernières activités
      * 
      * @return Panel configuré
      */
-    private JPanel createActivitiesPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-
-        JLabel title = new JLabel("Dernières activités");
-        title.setFont(HEADING_FONT);
-        title.setForeground(EMSI_GRAY);
-
-        JTextArea activities = new JTextArea("Aucune activité récente.");
-        activities.setEditable(false);
-        activities.setBackground(Color.WHITE);
-        activities.setFont(SUBTITLE_FONT);
-
-        panel.add(title, BorderLayout.NORTH);
-        panel.add(activities, BorderLayout.CENTER);
-
-        return panel;
-    }
-
     /**
      * Charge une image depuis les ressources
      * 
@@ -2293,14 +2151,6 @@ addButton.addActionListener(e -> {
             e.printStackTrace();
             return null;
         }
-    }
-
-    // Ajoute ceci dans EnseignantDashboard
-    private JPanel createCalendarPanel() {
-        JPanel panel = new JPanel();
-        panel.setBackground(Color.WHITE);
-        panel.add(new JLabel("Calendrier à venir..."));
-        return panel;
     }
 
     // --- Ajout : Méthode de modification du profil enseignant ---
