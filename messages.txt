@@ -48,3 +48,5 @@
 48|2|etudiant|1|enseignant|2025-06-29T22:23:49.568143800|bonjour monsieur
 49|1|enseignant|2|etudiant|2025-06-29T22:24:18.840360200|bonjour leila
 50|0|ADMIN|2|STUDENT|2025-06-29T22:30:00.648110|Vous êtes convoqué(e) au conseil disciplinaire suite à une absence non justifiée le 2025-06-29. Merci de consulter l'administration.
+51|5|etudiant|1|enseignant|2025-07-01T18:49:29.808567300|bonjour Monsieur
+52|1|enseignant|5|etudiant|2025-07-01T18:52:20.068867500|Bonjour Omar !

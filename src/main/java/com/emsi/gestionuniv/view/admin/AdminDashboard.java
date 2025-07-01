@@ -151,6 +151,7 @@ public class AdminDashboard extends JFrame {
         planning.setTitre(titre);
         planning.setClasse(classe);
         planning.setCheminPdf(chemin);
+        planning.setCible(classe);
         new com.emsi.gestionuniv.service.PlanningExamenService().ajouterPlanning(planning);
         JOptionPane.showMessageDialog(panel, "Planning déposé !");
         titreField.setText("");

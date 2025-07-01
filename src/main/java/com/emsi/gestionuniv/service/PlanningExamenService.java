@@ -8,11 +8,12 @@ import com.emsi.gestionuniv.config.DBConnect;
 public class PlanningExamenService {
     public void ajouterPlanning(PlanningExamen planning) {
         try (Connection conn = DBConnect.getConnection()) {
-            String sql = "INSERT INTO planning_examens (classe, titre, chemin_pdf) VALUES (?, ?, ?)";
+            String sql = "INSERT INTO planning_examens (classe, titre, chemin_pdf, cible) VALUES (?, ?, ?, ?)";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, planning.getClasse());
             ps.setString(2, planning.getTitre());
             ps.setString(3, planning.getCheminPdf());
+            ps.setString(4, planning.getCible());
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

@@ -925,7 +925,7 @@ private JPanel createEmploiDuTempsTab() {
                 if (new File(path).exists()) {
                     icon = new ImageIcon(path);
                 } else {
-                    java.net.URL imgURL = getClass().getResource(path);
+                    java.net.URL imgURL = getClass().getResource("/images/" + path);
                     if (imgURL != null) {
                         icon = new ImageIcon(imgURL);
                     } else {
