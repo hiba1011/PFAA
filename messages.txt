@@ -11,38 +11,7 @@
 11|1|etudiant|1|enseignant|2025-06-28T12:34:23.411212100|salut
 12|1|etudiant|1|enseignant|2025-06-28T12:42:23.581076200|cv,et vous?
 13|1|enseignant|1|etudiant|2025-06-28T12:43:06.839682900|cv merci
-14|1|enseignant|1|etudiant|2025-06-28T12:56:06.610150700|saaaaalamaaa
-15|1|etudiant|1|enseignant|2025-06-28T12:56:44.929086800|uiiiiii
-16|1|etudiant|1|enseignant|2025-06-28T13:26:43.610910500|orejfrewjfewp-jf
-17|1|enseignant|1|etudiant|2025-06-28T13:27:18.653392500|hewfheww
-18|1|enseignant|1|etudiant|2025-06-28T13:27:33.043345|jdeodq
-19|1|enseignant|1|etudiant|2025-06-28T13:27:42.633500100|ehowjf
-20|1|etudiant|1|enseignant|2025-06-28T13:28:10.252450|jvpjfef
 21|1|enseignant|1|etudiant|2025-06-28T13:41:51.131280700|donc,merci
-22|1|enseignant|1|etudiant|2025-06-28T13:51:43.579170600|hillo
-23|1|enseignant|1|etudiant|2025-06-28T14:21:00.606974100|nonnnnn
-24|1|enseignant|1|etudiant|2025-06-28T14:36:57.487759900|teste teste
-25|1|enseignant|1|etudiant|2025-06-28T14:38:48.798765700|youssef
-26|1|etudiant|1|enseignant|2025-06-28T14:38:58.338988300|ui
-27|1|enseignant|1|etudiant|2025-06-28T14:46:43.281864700|tetttttttetet
-28|1|etudiant|1|enseignant|2025-06-28T14:47:13.829186300|okiiii
-29|1|enseignant|1|etudiant|2025-06-28T14:59:47.053141400|waaaa youssef
-30|1|etudiant|1|enseignant|2025-06-28T15:00:16.357423900|?
-31|1|enseignant|1|etudiant|2025-06-28T16:09:02.750439800|sorry
-32|1|enseignant|1|etudiant|2025-06-28T16:11:15.449371|bijourrr
-33|1|etudiant|1|enseignant|2025-06-28T16:11:26.735130600|hillo
-34|1|enseignant|1|etudiant|2025-06-28T16:50:31.137729900|hello
-35|1|enseignant|1|etudiant|2025-06-28T17:13:32.126622400|hru
-36|1|enseignant|1|etudiant|2025-06-28T17:29:14.009419600|good fine?
-37|1|enseignant|1|etudiant|2025-06-28T17:37:54.419717200|hazolat wlahi hazolat
-38|1|enseignant|1|etudiant|2025-06-28T17:58:30.494853300|yaaaa ilahi
-39|1|enseignant|1|etudiant|2025-06-28T18:02:29.206901600|mimimimiiiiiiiiiiiiiii
-40|1|enseignant|1|etudiant|2025-06-28T18:07:57.375568100|slm
-41|1|etudiant|1|enseignant|2025-06-28T18:08:53.682185300|fdi7a hadi
-42|1|enseignant|1|etudiant|2025-06-28T18:14:36.072191200|sbr sbr :<
-43|1|enseignant|1|etudiant|2025-06-28T18:24:05.019579400|youssef
-44|1|enseignant|1|etudiant|2025-06-29T19:52:34.319881100|salam ana mister salta3 ana daba f 9a3 lhamour
-45|1|etudiant|1|enseignant|2025-06-29T20:49:39.539427300|bonjour le jour
 46|0|ADMIN|2|STUDENT|2025-06-29T21:24:03.131662400|Vous êtes convoqué(e) au conseil disciplinaire suite à une absence non justifiée le 2025-06-29. Merci de consulter l'administration.
 47|0|ADMIN|2|STUDENT|2025-06-29T21:26:48.990917500|Vous êtes convoqué(e) au conseil disciplinaire suite à une absence non justifiée le 2025-06-29. Merci de consulter l'administration.
 48|2|etudiant|1|enseignant|2025-06-29T22:23:49.568143800|bonjour monsieur
